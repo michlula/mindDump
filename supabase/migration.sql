@@ -93,7 +93,7 @@ ALTER TABLE pending_categorizations ENABLE ROW LEVEL SECURITY;
 CREATE TABLE pending_messages (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   telegram_chat_id BIGINT NOT NULL,
-  media_type TEXT NOT NULL CHECK (media_type IN ('image', 'video')),
+  media_type TEXT NOT NULL CHECK (media_type IN ('image', 'video', 'link')),
   media_url TEXT NOT NULL,
   media_metadata JSONB DEFAULT '{}',
   telegram_message_id BIGINT,

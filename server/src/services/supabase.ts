@@ -91,7 +91,7 @@ export async function deletePendingCategorization(id: string): Promise<void> {
 
 export async function createPendingMessage(
   chatId: number,
-  mediaType: 'image' | 'video',
+  mediaType: 'image' | 'video' | 'link',
   mediaUrl: string,
   mediaMetadata: Record<string, unknown>,
   telegramMessageId?: number

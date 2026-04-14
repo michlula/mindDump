@@ -48,7 +48,7 @@ export interface LinkMetadata {
 export interface PendingMessage {
   id: string;
   telegram_chat_id: number;
-  media_type: 'image' | 'video';
+  media_type: 'image' | 'video' | 'link';
   media_url: string;
   media_metadata: Record<string, unknown>;
   telegram_message_id: number | null;

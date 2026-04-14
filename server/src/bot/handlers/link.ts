@@ -1,7 +1,7 @@
 import { Context } from 'grammy';
 import { extractUrls, fetchLinkPreview } from '../../services/linkPreview.js';
 import { saveDumpWithCategorization } from './shared.js';
-import { categorizeContent } from '../../services/categorizer.js';
+import { createPendingMessage } from '../../services/supabase.js';
 import { DumpInsert } from '../../types/index.js';
 
 export async function handleLinkMessage(ctx: Context) {
@@ -11,22 +11,35 @@ export async function handleLinkMessage(ctx: Context) {
   if (urls.length === 0) return;
 
   try {
-    // Use the first URL as the primary link
     const url = urls[0];
 
     await ctx.reply('🔗 Fetching link preview...');
 
     const metadata = await fetchLinkPreview(url);
 
-    // Use link title + description for better AI categorization
-    const contentForAI = [
-      text,
-      metadata.title,
-      metadata.description,
-    ]
-      .filter(Boolean)
-      .join(' — ');
+    // Check if this is a bare URL (no additional text beyond the URL itself)
+    const textWithoutUrls = text.replace(/https?:\/\/[^\s<>'"]+/gi, '').trim();
+    const isBareUrl = textWithoutUrls.length === 0;
 
+    if (isBareUrl) {
+      // Bare URL — buffer for potential follow-up description
+      const chatId = ctx.message!.chat.id;
+
+      await createPendingMessage(
+        chatId,
+        'link',
+        url,
+        metadata as unknown as Record<string, unknown>,
+        ctx.message?.message_id
+      );
+
+      await ctx.reply(
+        '🔗 Link saved! Send a description within 60s, or it will be saved as-is.'
+      );
+      return;
+    }
+
+    // Has additional text — save immediately with full context
     const dump: DumpInsert = {
       content: text,
       type: 'link',
@@ -34,11 +47,7 @@ export async function handleLinkMessage(ctx: Context) {
       telegram_message_id: ctx.message?.message_id,
     };
 
-    await saveDumpWithCategorization(ctx, {
-      ...dump,
-      // Override content temporarily for categorization, but save original text
-      content: text,
-    });
+    await saveDumpWithCategorization(ctx, dump);
   } catch (error) {
     console.error('Link handler error:', error);
     await ctx.reply('Failed to process link. Please try again.');

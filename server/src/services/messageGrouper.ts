@@ -10,6 +10,7 @@ import { PendingMessage, DumpInsert } from '../types/index.js';
 import { saveDumpWithCategorization, askForCategory } from '../bot/handlers/shared.js';
 
 const GROUP_WINDOW_MS = 60 * 1000; // 60 seconds
+const CONFIDENCE_THRESHOLD = 0.7;
 
 function isStale(pending: PendingMessage): boolean {
   const age = Date.now() - new Date(pending.created_at).getTime();
@@ -24,26 +25,40 @@ async function fetchImageBuffer(url: string): Promise<Buffer> {
   return Buffer.from(await response.arrayBuffer());
 }
 
-const CONFIDENCE_THRESHOLD = 0.7;
-
+/**
+ * Flush a single pending message as a standalone dump.
+ * IMPORTANT: Deletes the pending record FIRST to prevent duplicates on retry.
+ */
 async function flushPendingMessage(
   bot: Bot,
   pending: PendingMessage
 ): Promise<void> {
+  // Delete FIRST to prevent duplicates if Telegram retries the webhook
+  try {
+    await deletePendingMessage(pending.id);
+  } catch (deleteError) {
+    console.error('Failed to delete pending message, skipping flush to prevent duplicates:', deleteError);
+    return;
+  }
+
   try {
     const isImage = pending.media_type === 'image';
-    const fallbackContent = isImage ? '[Image]' : '[Video]';
+    const isLink = pending.media_type === 'link';
 
     const dump: DumpInsert = {
-      content: fallbackContent,
+      content: isImage ? '[Image]' : isLink ? pending.media_url : '[Video]',
       type: pending.media_type,
-      media_url: pending.media_url,
       metadata: pending.media_metadata,
       telegram_message_id: pending.telegram_message_id ?? undefined,
     };
 
+    // Only set media_url for images/videos (not links — links store URL in metadata)
+    if (!isLink) {
+      dump.media_url = pending.media_url;
+    }
+
     // Use text-based categorization for flush (fast, avoids Vercel 10s timeout)
-    const result = await categorizeContent(fallbackContent, pending.media_type);
+    const result = await categorizeContent(dump.content, pending.media_type);
     if (result.confidence >= CONFIDENCE_THRESHOLD) {
       const category = await getCategoryByName(result.category);
       if (category) dump.category_id = category.id;
@@ -56,15 +71,13 @@ async function flushPendingMessage(
 
     await createDump(dump);
 
-    const icon = isImage ? '📸' : '🎬';
+    const icon = isImage ? '📸' : isLink ? '🔗' : '🎬';
     await bot.api.sendMessage(
       pending.telegram_chat_id,
-      `${icon} Saved ${pending.media_type} (no caption received).`
+      `${icon} Saved ${pending.media_type} (no description received).`
     );
   } catch (error) {
     console.error('Error flushing pending message:', error);
-  } finally {
-    await deletePendingMessage(pending.id);
   }
 }
 
@@ -97,7 +110,7 @@ export async function flushStalePendingMessages(
 }
 
 /**
- * Try to merge a text message with the most recent pending media message.
+ * Try to merge a text message with the most recent pending message.
  * Flushes any older pending messages as standalone dumps.
  * Returns true if merge happened.
  */
@@ -117,16 +130,28 @@ export async function tryMergeTextWithPendingMedia(
     await flushPendingMessage(bot, freshPending[i]);
   }
 
+  // Delete pending record FIRST to prevent duplicates on retry
   try {
+    await deletePendingMessage(pending.id);
+  } catch (deleteError) {
+    console.error('Failed to delete pending message during merge:', deleteError);
+    return false;
+  }
+
+  try {
+    const isLink = pending.media_type === 'link';
+
     const dump: DumpInsert = {
       content: text,
       type: pending.media_type,
-      media_url: pending.media_url,
       metadata: pending.media_metadata,
       telegram_message_id: pending.telegram_message_id ?? undefined,
     };
 
-    await deletePendingMessage(pending.id);
+    // Only set media_url for images/videos (not links)
+    if (!isLink) {
+      dump.media_url = pending.media_url;
+    }
 
     if (pending.media_type === 'image') {
       // Re-fetch image for vision categorization with caption
@@ -146,19 +171,19 @@ export async function tryMergeTextWithPendingMedia(
         await askForCategory(ctx, dump);
       }
     } else {
-      // Video: use text-based categorization via shared handler
+      // Video or Link: use text-based categorization via shared handler
       await saveDumpWithCategorization(ctx, dump);
     }
 
     return true;
   } catch (error) {
-    console.error('Error merging text with pending media:', error);
+    console.error('Error merging text with pending message:', error);
     return false;
   }
 }
 
 /**
- * Force-flush all pending messages for a chat (used when incoming text is a URL).
+ * Force-flush all pending messages for a chat.
  */
 export async function flushAllPendingMessages(
   bot: Bot,
