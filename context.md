@@ -1,10 +1,13 @@
 # Context — Mind Dump
 
 ## Current State
-**ALL CODE IS WRITTEN AND TYPESCRIPT-CLEAN (0 errors on both server and dashboard).**
-**STATUS: Vercel deployment code complete (ESM migration done, serverless functions created). Ready for external service setup + deploy.**
+**APPLICATION IS LIVE AND WORKING.**
+**STATUS: Deployed on Vercel. Bot receives messages, AI categorization works (Gemini 2.5 Flash), dashboard displays dumps, delete/pin work.**
 
-Nothing has been tested yet. No .env files exist. No external services have been created.
+- Vercel production URL: https://minddumpapp.vercel.app
+- Vercel deploys via CLI (`vercel deploy --prod`) — GitHub auto-deploy not yet configured
+- All external services set up: Supabase, Telegram bot, Gemini API
+- RLS policies allow public read + update + delete on dumps (no auth yet)
 
 ## Deployment Strategy: Vercel (Free Tier)
 Both the bot and dashboard deploy as a single Vercel project — $0/month.
@@ -25,10 +28,13 @@ Both the bot and dashboard deploy as a single Vercel project — $0/month.
 | Dashboard | Vercel (static) | $0 |
 | Database | Supabase free tier | $0 |
 | Storage | Supabase (1 GB free) | $0 |
-| AI | Gemini Flash free tier | $0 |
+| AI | Gemini 2.5 Flash free tier | $0 |
 | Telegram | Always free | $0 |
 
-### Known limitation:
+### Known limitation — security:
+Dashboard data is currently publicly readable (anon key + public read RLS policies). Fine for non-sensitive content, but personal data should be locked down by adding authentication to the dashboard and removing public read policies. See Phase 8 in progress.md.
+
+### Known limitation — timeout:
 Vercel free tier has a 10-second function timeout. Image processing (sharp compression + Gemini Vision) could be tight for very large images. Acceptable for personal use.
 
 ## Next Steps (In Order)
@@ -83,7 +89,7 @@ server/
     │       └── shared.ts     # saveDumpWithCategorization() + askForCategory() — shared logic
     └── services/
         ├── supabase.ts       # Supabase client + CRUD: getCategories, getCategoryByName, createDump, uploadMedia, pending categorization CRUD
-        ├── categorizer.ts    # categorizeContent(text) + categorizeImage(buffer) — Gemini 2.0 Flash
+        ├── categorizer.ts    # categorizeContent(text) + categorizeImage(buffer) — Gemini 2.5 Flash
         ├── linkPreview.ts    # extractUrls(), containsUrl(), fetchLinkPreview() — open-graph-scraper
         └── mediaProcessor.ts # downloadTelegramFile(), processAndUploadImage() (sharp compress), processAndUploadVideo()
 ```
@@ -170,6 +176,6 @@ mindDump/
 
 ### Database
 - 3 tables: `categories`, `dumps`, `pending_categorizations`
-- RLS enabled: public read (anon key), full access (service_role key)
+- RLS enabled: public read/update/delete on dumps (anon key), full access (service_role key)
 - Full-text search index on `dumps.search_vector` (generated tsvector column)
-- Storage bucket: "media" (must be created manually as Public)
+- Storage bucket: "media" (public)

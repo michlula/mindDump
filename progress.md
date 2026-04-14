@@ -12,11 +12,11 @@
 - [x] Text message handler
 - [x] Install dependencies (npm install)
 - [x] SQL migration file for Supabase tables
-- [ ] User: Create Supabase project + run migration SQL
-- [ ] User: Create Telegram bot via @BotFather
-- [ ] User: Get Gemini API key from aistudio.google.com
-- [ ] User: Fill in .env with credentials
-- [ ] Test basic text saving flow end-to-end
+- [x] User: Create Supabase project + run migration SQL
+- [x] User: Create Telegram bot via @BotFather
+- [x] User: Get Gemini API key from aistudio.google.com
+- [x] User: Fill in .env with credentials (Vercel env vars)
+- [x] Test basic text saving flow end-to-end
 
 ## Phase 2: AI Auto-Categorization
 - [x] Categorizer service (Gemini Flash text + image)
@@ -25,7 +25,7 @@
 - [x] Callback handler for category selection
 - [x] Pending categorizations flow
 - [x] Fallback to "General" on AI failure
-- [ ] Test categorization accuracy
+- [x] Test categorization accuracy (working with Gemini 2.5 Flash)
 
 ## Phase 3: Media Handling (Images, Screenshots, Videos)
 - [x] Media processor service (download, compress, upload)
@@ -33,13 +33,13 @@
 - [x] Video message handler
 - [x] Caption extraction and handling
 - [x] Gemini Vision for captionless images
-- [ ] Test with screenshots, photos, videos
+- [x] Test with screenshots, photos, videos
 
 ## Phase 4: Link Handling + Previews
 - [x] Link preview service (URL detection + Open Graph)
 - [x] Link message handler (detect URL in text, fetch preview, save)
 - [x] Store link metadata in JSONB column
-- [ ] Test with various URLs
+- [x] Test with various URLs
 
 ## Phase 5: Web Dashboard — Core
 - [x] Initialize React + Vite + Tailwind
@@ -60,13 +60,33 @@
 - [ ] Pull-to-refresh — future enhancement
 - [ ] Filter by content type — future enhancement
 
+## Phase 9: Smart Titles (AI-generated)
+- [ ] When a dump has no title or a generic one (e.g. "Photo from Name"), use AI to generate a descriptive title based on the content/image
+- [ ] Add `title` field to dumps table (nullable, short text)
+- [ ] AI generates title during categorization step (single Gemini call for both category + title)
+- [ ] Dashboard displays title prominently on DumpCard
+- [ ] Fallback: use first ~60 chars of content if AI title generation fails
+
+## Phase 10: Message Grouping (combine related messages)
+- [ ] Track recent messages per chat with timestamps
+- [ ] When a photo arrives without a caption, wait briefly (~5s) for a follow-up text message
+- [ ] If a text message arrives shortly after a photo/video from the same chat, merge them into one dump (text becomes the caption/title)
+- [ ] Use `pending_categorizations` or a new `pending_messages` table to buffer messages
+- [ ] Handle edge cases: multiple photos in a row, media groups (Telegram album), text-only sequences
+
+## Phase 8: Security — Private Dashboard Access (future)
+- [ ] Remove public read RLS policies from categories and dumps tables
+- [ ] Add authentication to dashboard (e.g. Supabase Auth or simple password gate)
+- [ ] Restrict dashboard reads to authenticated users only
+- [ ] Review storage bucket access (media URLs are public by direct link)
+
 ## Phase 7: Free Deployment (Vercel)
 - [x] Migrate server from CommonJS to ESM (`"type": "module"`, `.js` import extensions, `nodenext` module resolution)
 - [x] Create `api/webhook.ts` — Vercel serverless function using grammY `webhookCallback(bot, "https")`
 - [x] Create `api/setup.ts` — one-time GET endpoint to register webhook with Telegram
 - [x] Create `vercel.json` — builds dashboard as static site, routes `/api/*` to serverless functions
 - [x] Update `.env.example` with Vercel deployment notes
-- [ ] Deploy to Vercel + verify end-to-end flow
+- [x] Deploy to Vercel + verify end-to-end flow
 
 ## Ready for Testing
 
