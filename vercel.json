@@ -1,10 +1,5 @@
 {
   "buildCommand": "cd dashboard && npm install && npm run build",
   "outputDirectory": "dashboard/dist",
-  "installCommand": "npm install && cd server && npm install",
-  "functions": {
-    "api/*.ts": {
-      "includeFiles": "server/src/**"
-    }
-  }
+  "installCommand": "npm install && cd server && npm install"
 }
