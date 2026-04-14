@@ -12,7 +12,7 @@ export async function categorizeContent(
     const categories = await getCategories();
     const categoryList = categories.map((c) => c.name).join(', ');
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     const prompt = `You are a content categorizer. Classify the following ${contentType} content into exactly one of these categories: ${categoryList}.
 
@@ -58,7 +58,7 @@ export async function categorizeImage(
     const categories = await getCategories();
     const categoryList = categories.map((c) => c.name).join(', ');
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     const imagePart = {
       inlineData: {
