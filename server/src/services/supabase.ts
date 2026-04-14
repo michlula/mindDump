@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { Category, Dump, DumpInsert, PendingCategorization } from '../types/index.js';
+import { Category, Dump, DumpInsert, PendingCategorization, PendingMessage } from '../types/index.js';
 
 const supabaseUrl = process.env.SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_KEY!;
@@ -83,6 +83,62 @@ export async function deletePendingCategorization(id: string): Promise<void> {
     .from('pending_categorizations')
     .delete()
     .eq('id', id);
+
+  if (error) throw error;
+}
+
+// --- Pending Messages (message grouping) ---
+
+export async function createPendingMessage(
+  chatId: number,
+  mediaType: 'image' | 'video',
+  mediaUrl: string,
+  mediaMetadata: Record<string, unknown>,
+  telegramMessageId?: number
+): Promise<PendingMessage> {
+  const { data, error } = await supabase
+    .from('pending_messages')
+    .insert({
+      telegram_chat_id: chatId,
+      media_type: mediaType,
+      media_url: mediaUrl,
+      media_metadata: mediaMetadata,
+      telegram_message_id: telegramMessageId,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function getPendingMessages(
+  chatId: number
+): Promise<PendingMessage[]> {
+  const { data, error } = await supabase
+    .from('pending_messages')
+    .select('*')
+    .eq('telegram_chat_id', chatId)
+    .order('created_at', { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+}
+
+export async function deletePendingMessage(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('pending_messages')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+}
+
+export async function deleteAllPendingMessages(chatId: number): Promise<void> {
+  const { error } = await supabase
+    .from('pending_messages')
+    .delete()
+    .eq('telegram_chat_id', chatId);
 
   if (error) throw error;
 }

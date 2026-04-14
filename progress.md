@@ -68,11 +68,11 @@
 - [ ] Fallback: use first ~60 chars of content if AI title generation fails
 
 ## Phase 10: Message Grouping (combine related messages)
-- [ ] Track recent messages per chat with timestamps
-- [ ] When a photo arrives without a caption, wait briefly (~5s) for a follow-up text message
-- [ ] If a text message arrives shortly after a photo/video from the same chat, merge them into one dump (text becomes the caption/title)
-- [ ] Use `pending_categorizations` or a new `pending_messages` table to buffer messages
-- [ ] Handle edge cases: multiple photos in a row, media groups (Telegram album), text-only sequences
+- [x] Track recent messages per chat with timestamps (pending_messages table with created_at)
+- [x] When a photo arrives without a caption, buffer it and wait for a follow-up text message (60s window)
+- [x] If a text message arrives shortly after a photo/video from the same chat, merge them into one dump (text becomes the caption)
+- [x] New `pending_messages` table to buffer uncaptioned media messages
+- [x] Handle edge cases: multiple photos in a row (flush older ones), media groups/albums (save immediately, no buffering), text-only sequences (unchanged), URL after photo (flush photo, save URL separately)
 
 ## Phase 8: Security — Private Dashboard Access (future)
 - [ ] Remove public read RLS policies from categories and dumps tables

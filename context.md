@@ -8,6 +8,7 @@
 - Vercel deploys via CLI (`vercel deploy --prod`) — GitHub auto-deploy not yet configured
 - All external services set up: Supabase, Telegram bot, Gemini API
 - RLS policies allow public read + update + delete on dumps (no auth yet)
+- Message grouping: uncaptioned photos/videos are buffered for 60s, merged with follow-up text as caption
 
 ## Deployment Strategy: Vercel (Free Tier)
 Both the bot and dashboard deploy as a single Vercel project — $0/month.
@@ -89,9 +90,10 @@ server/
     │       └── shared.ts     # saveDumpWithCategorization() + askForCategory() — shared logic
     └── services/
         ├── supabase.ts       # Supabase client + CRUD: getCategories, getCategoryByName, createDump, uploadMedia, pending categorization CRUD
-        ├── categorizer.ts    # categorizeContent(text) + categorizeImage(buffer) — Gemini 2.5 Flash
-        ├── linkPreview.ts    # extractUrls(), containsUrl(), fetchLinkPreview() — open-graph-scraper
-        └── mediaProcessor.ts # downloadTelegramFile(), processAndUploadImage() (sharp compress), processAndUploadVideo()
+        ├── categorizer.ts     # categorizeContent(text) + categorizeImage(buffer) — Gemini 2.5 Flash
+        ├── linkPreview.ts     # extractUrls(), containsUrl(), fetchLinkPreview() — open-graph-scraper
+        ├── mediaProcessor.ts  # downloadTelegramFile(), processAndUploadImage() (sharp compress), processAndUploadVideo()
+        └── messageGrouper.ts  # flushStalePendingMessages(), tryMergeTextWithPendingMedia(), flushAllPendingMessages()
 ```
 
 ### Dashboard (`dashboard/`) — 13 source files, all dependencies installed

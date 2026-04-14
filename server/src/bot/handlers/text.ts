@@ -1,20 +1,44 @@
-import { Context } from 'grammy';
+import { Context, Bot } from 'grammy';
 import { containsUrl } from '../../services/linkPreview.js';
 import { handleLinkMessage } from './link.js';
 import { saveDumpWithCategorization } from './shared.js';
+import {
+  flushStalePendingMessages,
+  tryMergeTextWithPendingMedia,
+  flushAllPendingMessages,
+} from '../../services/messageGrouper.js';
 
-export async function handleTextMessage(ctx: Context) {
-  const text = ctx.message?.text;
-  if (!text) return;
+export function createTextHandler(bot: Bot) {
+  return async function handleTextMessage(ctx: Context) {
+    const text = ctx.message?.text;
+    if (!text) return;
 
-  // If the message contains a URL, route to link handler
-  if (containsUrl(text)) {
-    return handleLinkMessage(ctx);
-  }
+    const chatId = ctx.message!.chat.id;
 
-  await saveDumpWithCategorization(ctx, {
-    content: text,
-    type: 'text',
-    telegram_message_id: ctx.message?.message_id,
-  });
+    // Flush stale pending messages, get fresh ones still within window
+    const freshPending = await flushStalePendingMessages(bot, chatId);
+
+    // If there's pending media and this is NOT a URL, try to merge as caption
+    if (freshPending.length > 0 && !containsUrl(text)) {
+      const merged = await tryMergeTextWithPendingMedia(bot, ctx, text, freshPending);
+      if (merged) return;
+    }
+
+    // If there's pending media but text is a URL, flush them (URL is not a caption)
+    if (freshPending.length > 0 && containsUrl(text)) {
+      await flushAllPendingMessages(bot, chatId);
+    }
+
+    // Original logic: URL detection → link handler
+    if (containsUrl(text)) {
+      return handleLinkMessage(ctx);
+    }
+
+    // Regular text dump
+    await saveDumpWithCategorization(ctx, {
+      content: text,
+      type: 'text',
+      telegram_message_id: ctx.message?.message_id,
+    });
+  };
 }

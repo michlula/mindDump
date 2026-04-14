@@ -86,3 +86,23 @@ CREATE POLICY "Allow service role full access on pending_categorizations" ON pen
   FOR ALL USING (auth.role() = 'service_role');
 
 ALTER TABLE pending_categorizations ENABLE ROW LEVEL SECURITY;
+
+-- ============================================================
+-- 6. Pending messages (for message grouping / caption merging)
+-- ============================================================
+CREATE TABLE pending_messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  telegram_chat_id BIGINT NOT NULL,
+  media_type TEXT NOT NULL CHECK (media_type IN ('image', 'video')),
+  media_url TEXT NOT NULL,
+  media_metadata JSONB DEFAULT '{}',
+  telegram_message_id BIGINT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX idx_pending_messages_chat ON pending_messages(telegram_chat_id);
+
+ALTER TABLE pending_messages ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow service role full access on pending_messages" ON pending_messages
+  FOR ALL USING (auth.role() = 'service_role');

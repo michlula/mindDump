@@ -1,7 +1,9 @@
 import { Context, Bot } from 'grammy';
 import { processAndUploadVideo } from '../../services/mediaProcessor.js';
 import { saveDumpWithCategorization } from './shared.js';
+import { createPendingMessage } from '../../services/supabase.js';
 import { DumpInsert } from '../../types/index.js';
+import { flushStalePendingMessages } from '../../services/messageGrouper.js';
 
 const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
 
@@ -10,7 +12,13 @@ export function createVideoHandler(bot: Bot) {
     const video = ctx.message?.video;
     if (!video) return;
 
+    const chatId = ctx.message!.chat.id;
+
+    // Flush any stale pending messages from previous interactions
+    await flushStalePendingMessages(bot, chatId);
+
     const caption = ctx.message?.caption || '';
+    const mediaGroupId = ctx.message?.media_group_id;
 
     // Warn if video is large
     if (video.file_size && video.file_size > MAX_VIDEO_SIZE) {
@@ -28,20 +36,43 @@ export function createVideoHandler(bot: Bot) {
         video.file_name
       );
 
-      const dump: DumpInsert = {
-        content: caption || '[Video]',
-        type: 'video',
-        media_url: url,
-        metadata: {
+      // If caption exists OR this is part of an album: process immediately
+      if (caption || mediaGroupId) {
+        const dump: DumpInsert = {
+          content: caption || '[Video]',
+          type: 'video',
+          media_url: url,
+          metadata: {
+            duration: video.duration,
+            width: video.width,
+            height: video.height,
+            file_size: video.file_size,
+            ...(mediaGroupId ? { media_group_id: mediaGroupId } : {}),
+          },
+          telegram_message_id: ctx.message?.message_id,
+        };
+
+        await saveDumpWithCategorization(ctx, dump);
+        return;
+      }
+
+      // No caption, not album: buffer for potential follow-up text
+      await createPendingMessage(
+        chatId,
+        'video',
+        url,
+        {
           duration: video.duration,
           width: video.width,
           height: video.height,
           file_size: video.file_size,
         },
-        telegram_message_id: ctx.message?.message_id,
-      };
+        ctx.message?.message_id
+      );
 
-      await saveDumpWithCategorization(ctx, dump);
+      await ctx.reply(
+        '🎬 Video received! Send a caption within 60s, or it will be saved as-is.'
+      );
     } catch (error) {
       console.error('Video handler error:', error);
       await ctx.reply('Failed to process video. Please try again.');
