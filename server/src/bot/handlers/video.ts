@@ -1,7 +1,11 @@
 import { Context, Bot } from 'grammy';
 import { processAndUploadVideo } from '../../services/mediaProcessor.js';
 import { saveDumpWithCategorization } from './shared.js';
-import { createPendingMessage } from '../../services/supabase.js';
+import {
+  createPendingMessage,
+  isDumpExists,
+  isPendingMessageExists,
+} from '../../services/supabase.js';
 import { DumpInsert } from '../../types/index.js';
 import { flushStalePendingMessages } from '../../services/messageGrouper.js';
 
@@ -13,6 +17,11 @@ export function createVideoHandler(bot: Bot) {
     if (!video) return;
 
     const chatId = ctx.message!.chat.id;
+    const messageId = ctx.message!.message_id;
+
+    // Skip webhook retries
+    if (await isDumpExists(messageId)) return;
+    if (await isPendingMessageExists(chatId, messageId)) return;
 
     // Flush any stale pending messages from previous interactions
     await flushStalePendingMessages(bot, chatId);
@@ -49,7 +58,7 @@ export function createVideoHandler(bot: Bot) {
             file_size: video.file_size,
             ...(mediaGroupId ? { media_group_id: mediaGroupId } : {}),
           },
-          telegram_message_id: ctx.message?.message_id,
+          telegram_message_id: messageId,
         };
 
         await saveDumpWithCategorization(ctx, dump);
@@ -67,7 +76,7 @@ export function createVideoHandler(bot: Bot) {
           height: video.height,
           file_size: video.file_size,
         },
-        ctx.message?.message_id
+        messageId
       );
 
       await ctx.reply(

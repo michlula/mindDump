@@ -143,6 +143,30 @@ export async function deleteAllPendingMessages(chatId: number): Promise<void> {
   if (error) throw error;
 }
 
+export async function isPendingMessageExists(
+  chatId: number,
+  telegramMessageId: number
+): Promise<boolean> {
+  const { data } = await supabase
+    .from('pending_messages')
+    .select('id')
+    .eq('telegram_chat_id', chatId)
+    .eq('telegram_message_id', telegramMessageId)
+    .maybeSingle();
+
+  return !!data;
+}
+
+export async function isDumpExists(telegramMessageId: number): Promise<boolean> {
+  const { data } = await supabase
+    .from('dumps')
+    .select('id')
+    .eq('telegram_message_id', telegramMessageId)
+    .maybeSingle();
+
+  return !!data;
+}
+
 // --- Media Storage ---
 
 export async function uploadMedia(

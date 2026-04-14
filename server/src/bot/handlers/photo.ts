@@ -5,6 +5,8 @@ import {
   createDump,
   getCategoryByName,
   createPendingMessage,
+  isDumpExists,
+  isPendingMessageExists,
 } from '../../services/supabase.js';
 import { DumpInsert } from '../../types/index.js';
 import { askForCategory } from './shared.js';
@@ -18,6 +20,11 @@ export function createPhotoHandler(bot: Bot) {
     if (!photos || photos.length === 0) return;
 
     const chatId = ctx.message!.chat.id;
+    const messageId = ctx.message!.message_id;
+
+    // Skip webhook retries
+    if (await isDumpExists(messageId)) return;
+    if (await isPendingMessageExists(chatId, messageId)) return;
 
     // Flush any stale pending messages from previous interactions
     await flushStalePendingMessages(bot, chatId);
@@ -46,7 +53,7 @@ export function createPhotoHandler(bot: Bot) {
             height: photo.height,
             ...(mediaGroupId ? { media_group_id: mediaGroupId } : {}),
           },
-          telegram_message_id: ctx.message?.message_id,
+          telegram_message_id: messageId,
         };
 
         if (result.confidence >= CONFIDENCE_THRESHOLD) {
@@ -73,7 +80,7 @@ export function createPhotoHandler(bot: Bot) {
         'image',
         url,
         { width: photo.width, height: photo.height },
-        ctx.message?.message_id
+        messageId
       );
 
       await ctx.reply(
