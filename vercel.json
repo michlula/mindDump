@@ -6,5 +6,11 @@
     "api/*.ts": {
       "includeFiles": "server/**"
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/flush",
+      "schedule": "* * * * *"
+    }
+  ]
 }
