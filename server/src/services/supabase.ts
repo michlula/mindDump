@@ -87,24 +87,19 @@ export async function deletePendingCategorization(id: string): Promise<void> {
   if (error) throw error;
 }
 
-// --- Pending Messages (message grouping) ---
+// --- Pending Messages (batch processing) ---
 
-export async function createPendingMessage(
-  chatId: number,
-  mediaType: 'image' | 'video' | 'link',
-  mediaUrl: string,
-  mediaMetadata: Record<string, unknown>,
-  telegramMessageId?: number
-): Promise<PendingMessage> {
+export async function insertPendingMessage(msg: {
+  telegram_chat_id: number;
+  telegram_message_id?: number;
+  message_type: 'text' | 'image' | 'video' | 'link';
+  content?: string;
+  telegram_file_id?: string;
+  metadata?: Record<string, unknown>;
+}): Promise<PendingMessage> {
   const { data, error } = await supabase
     .from('pending_messages')
-    .insert({
-      telegram_chat_id: chatId,
-      media_type: mediaType,
-      media_url: mediaUrl,
-      media_metadata: mediaMetadata,
-      telegram_message_id: telegramMessageId,
-    })
+    .insert(msg)
     .select()
     .single();
 
@@ -112,35 +107,18 @@ export async function createPendingMessage(
   return data;
 }
 
-export async function getPendingMessages(
-  chatId: number
-): Promise<PendingMessage[]> {
-  const { data, error } = await supabase
-    .from('pending_messages')
-    .select('*')
-    .eq('telegram_chat_id', chatId)
-    .order('created_at', { ascending: true });
+export async function getStaleBatchChatIds(): Promise<number[]> {
+  const { data, error } = await supabase.rpc('get_stale_batch_chats');
+  if (error) throw error;
+  return (data || []).map((r: { telegram_chat_id: number }) => r.telegram_chat_id);
+}
 
+export async function claimPendingBatch(chatId: number): Promise<PendingMessage[]> {
+  const { data, error } = await supabase.rpc('claim_pending_batch', {
+    p_chat_id: chatId,
+  });
   if (error) throw error;
   return data || [];
-}
-
-export async function deletePendingMessage(id: string): Promise<void> {
-  const { error } = await supabase
-    .from('pending_messages')
-    .delete()
-    .eq('id', id);
-
-  if (error) throw error;
-}
-
-export async function deleteAllPendingMessages(chatId: number): Promise<void> {
-  const { error } = await supabase
-    .from('pending_messages')
-    .delete()
-    .eq('telegram_chat_id', chatId);
-
-  if (error) throw error;
 }
 
 export async function isPendingMessageExists(

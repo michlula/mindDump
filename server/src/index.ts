@@ -8,6 +8,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 import express from 'express';
 import { webhookCallback } from 'grammy';
 import { createBot } from './bot/index.js';
+import { processStaleBatches } from './services/batchProcessor.js';
 
 const PORT = process.env.PORT || 3000;
 
@@ -44,6 +45,16 @@ async function main() {
         console.log(`Bot @${botInfo.username} started with long polling`);
       },
     });
+
+    // Local dev: poll for stale batches every 15s (replaces pg_cron)
+    setInterval(async () => {
+      try {
+        const count = await processStaleBatches(bot);
+        if (count > 0) console.log(`Batch processor: processed ${count} chats`);
+      } catch (error) {
+        console.error('Batch processor interval error:', error);
+      }
+    }, 15_000);
   }
 
   // Health check endpoint

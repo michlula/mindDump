@@ -1,13 +1,11 @@
 import { Context, Bot } from 'grammy';
-import { containsUrl } from '../../services/linkPreview.js';
-import { handleLinkMessage } from './link.js';
-import { saveDumpWithCategorization } from './shared.js';
-import { isDumpExists } from '../../services/supabase.js';
+import { containsUrl, extractUrls, fetchLinkPreview } from '../../services/linkPreview.js';
 import {
-  flushStalePendingMessages,
-  tryMergeTextWithPendingMedia,
-  flushAllPendingMessages,
-} from '../../services/messageGrouper.js';
+  isDumpExists,
+  isPendingMessageExists,
+  insertPendingMessage,
+} from '../../services/supabase.js';
+import { processStaleBatches } from '../../services/batchProcessor.js';
 
 export function createTextHandler(bot: Bot) {
   return async function handleTextMessage(ctx: Context) {
@@ -17,36 +15,50 @@ export function createTextHandler(bot: Bot) {
     const chatId = ctx.message!.chat.id;
     const messageId = ctx.message!.message_id;
 
-    // Skip webhook retries: if this message already created a dump, skip
+    // Dedup: skip if already processed
     if (await isDumpExists(messageId)) return;
+    if (await isPendingMessageExists(chatId, messageId)) return;
 
-    // Flush stale pending messages, get fresh ones still within window
-    const freshPending = await flushStalePendingMessages(bot, chatId);
+    try {
+      if (containsUrl(text)) {
+        // Link message — fetch OG metadata (with short timeout)
+        const urls = extractUrls(text);
+        const url = urls[0];
+        let metadata: Record<string, unknown> = { url };
 
-    // Skip webhook retries: if this message was already buffered as pending, skip
-    if (freshPending.some(p => p.telegram_message_id === messageId)) return;
+        try {
+          const preview = await fetchLinkPreview(url);
+          metadata = preview as unknown as Record<string, unknown>;
+        } catch (error) {
+          console.error('OG fetch failed (non-fatal):', error);
+        }
 
-    // If there's pending content and this is NOT a URL, try to merge as description
-    if (freshPending.length > 0 && !containsUrl(text)) {
-      const merged = await tryMergeTextWithPendingMedia(bot, ctx, text, freshPending);
-      if (merged) return;
+        await insertPendingMessage({
+          telegram_chat_id: chatId,
+          telegram_message_id: messageId,
+          message_type: 'link',
+          content: text,
+          metadata,
+        });
+      } else {
+        // Plain text message
+        await insertPendingMessage({
+          telegram_chat_id: chatId,
+          telegram_message_id: messageId,
+          message_type: 'text',
+          content: text,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to save pending text:', error);
+      return;
     }
 
-    // If there's pending content but text is a URL, flush them (URL is not a caption)
-    if (freshPending.length > 0 && containsUrl(text)) {
-      await flushAllPendingMessages(bot, chatId);
+    // Best-effort: trigger batch processing for stale messages
+    try {
+      await processStaleBatches(bot);
+    } catch (error) {
+      console.error('Batch processing error (non-fatal):', error);
     }
-
-    // Original logic: URL detection → link handler
-    if (containsUrl(text)) {
-      return handleLinkMessage(ctx);
-    }
-
-    // Regular text dump
-    await saveDumpWithCategorization(ctx, {
-      content: text,
-      type: 'text',
-      telegram_message_id: messageId,
-    });
   };
 }

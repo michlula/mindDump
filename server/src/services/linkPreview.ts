@@ -13,7 +13,7 @@ export function containsUrl(text: string): boolean {
 
 export async function fetchLinkPreview(url: string): Promise<LinkMetadata> {
   try {
-    const { result } = await ogs({ url, timeout: 10 });
+    const { result } = await ogs({ url, timeout: 3 });
 
     return {
       title: result.ogTitle || result.twitterTitle || result.dcTitle,

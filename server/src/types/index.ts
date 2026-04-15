@@ -48,11 +48,29 @@ export interface LinkMetadata {
 export interface PendingMessage {
   id: string;
   telegram_chat_id: number;
-  media_type: 'image' | 'video' | 'link';
-  media_url: string;
-  media_metadata: Record<string, unknown>;
   telegram_message_id: number | null;
+  message_type: 'text' | 'image' | 'video' | 'link';
+  content: string | null;
+  telegram_file_id: string | null;
+  metadata: Record<string, unknown>;
   created_at: string;
+}
+
+export interface BatchMessage extends PendingMessage {
+  image_buffer?: Buffer;
+  media_url?: string;
+}
+
+export interface DumpGroup {
+  title: string;
+  category: string;
+  confidence: number;
+  type: 'text' | 'link' | 'image' | 'video';
+  message_indices: number[];
+}
+
+export interface BatchResult {
+  groups: DumpGroup[];
 }
 
 export interface CategorizationResult {

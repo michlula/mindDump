@@ -1,5 +1,5 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { CategorizationResult, Category } from '../types/index.js';
+import { GoogleGenerativeAI, Part } from '@google/generative-ai';
+import { CategorizationResult, BatchMessage, BatchResult, Category } from '../types/index.js';
 import { getCategories } from './supabase.js';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
@@ -98,5 +98,126 @@ Rules:
   } catch (error) {
     console.error('AI image categorization failed:', error);
     return { category: 'General', confidence: 0 };
+  }
+}
+
+export async function processBatch(messages: BatchMessage[]): Promise<BatchResult> {
+  try {
+    const categories = await getCategories();
+    const categoryList = categories.map((c) => c.name).join(', ');
+
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+
+    // Build multimodal parts
+    const parts: Part[] = [];
+
+    // Describe each message
+    let messageDescriptions = '';
+    for (let i = 0; i < messages.length; i++) {
+      const msg = messages[i];
+      messageDescriptions += `\n[${i}] type=${msg.message_type}`;
+      if (msg.content) messageDescriptions += ` content="${msg.content}"`;
+      if (msg.image_buffer) messageDescriptions += ' (image attached below)';
+      if (msg.media_url && msg.message_type === 'video') messageDescriptions += ' (video)';
+    }
+
+    const prompt = `You are a content organizer. You receive a batch of messages sent by a user to their personal "mind dump" app.
+
+Your job:
+1. GROUP related messages together (e.g., a photo + its caption, multiple photos of the same topic)
+2. Generate a short TITLE (2-6 words) for each group that describes the content
+3. CATEGORIZE each group into one of: ${categoryList}
+4. Assign a CONFIDENCE score (0-1) for the category
+
+Messages:${messageDescriptions}
+
+Respond with ONLY a JSON object (no markdown, no code blocks):
+{
+  "groups": [
+    {
+      "title": "Short Descriptive Title",
+      "category": "CategoryName",
+      "confidence": 0.85,
+      "type": "image",
+      "message_indices": [0, 1]
+    }
+  ]
+}
+
+Rules:
+- Every message index (0 to ${messages.length - 1}) must appear in exactly one group
+- "type" should be the primary content type of the group: "image" if it contains images, "video" if video, "link" if links, "text" otherwise
+- "category" must be exactly one of: ${categoryList}
+- "title" should be descriptive and concise (2-6 words), like "Sunset Beach Photo" or "React Tutorial Link"
+- If messages are clearly unrelated, put them in separate groups
+- Default category to "General" if unsure`;
+
+    parts.push({ text: prompt });
+
+    // Add image parts
+    for (let i = 0; i < messages.length; i++) {
+      const msg = messages[i];
+      if (msg.image_buffer) {
+        parts.push({ text: `\n[Image for message ${i}]:` });
+        parts.push({
+          inlineData: {
+            data: msg.image_buffer.toString('base64'),
+            mimeType: 'image/jpeg',
+          },
+        });
+      }
+    }
+
+    const result = await model.generateContent(parts);
+    const text = result.response.text().trim();
+
+    const jsonStr = text.replace(/```json?\s*/g, '').replace(/```\s*/g, '').trim();
+    const parsed = JSON.parse(jsonStr) as BatchResult;
+
+    // Validate: ensure all indices covered
+    const coveredIndices = new Set<number>();
+    for (const group of parsed.groups) {
+      for (const idx of group.message_indices) {
+        coveredIndices.add(idx);
+      }
+      // Validate category
+      const valid = categories.find(
+        (c) => c.name.toLowerCase() === group.category.toLowerCase()
+      );
+      if (valid) {
+        group.category = valid.name;
+      } else {
+        group.category = 'General';
+      }
+      group.confidence = Math.min(1, Math.max(0, group.confidence));
+    }
+
+    // Check all indices are covered
+    for (let i = 0; i < messages.length; i++) {
+      if (!coveredIndices.has(i)) {
+        // Add uncovered message as its own group
+        parsed.groups.push({
+          title: messages[i].content?.slice(0, 30) || 'Untitled',
+          category: 'General',
+          confidence: 0,
+          type: messages[i].message_type,
+          message_indices: [i],
+        });
+      }
+    }
+
+    return parsed;
+  } catch (error) {
+    console.error('AI batch processing failed:', error);
+    // Fallback: each message as its own group
+    return {
+      groups: messages.map((msg, i) => ({
+        title: msg.content?.slice(0, 30) || 'Untitled',
+        category: 'General',
+        confidence: 0,
+        type: msg.message_type,
+        message_indices: [i],
+      })),
+    };
   }
 }
