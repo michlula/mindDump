@@ -2,13 +2,15 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// Load .env from project root
+// Load .env BEFORE any other imports that use env vars
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
-import express from 'express';
-import { webhookCallback } from 'grammy';
-import { createBot } from './bot/index.js';
-import { processStaleBatches } from './services/batchProcessor.js';
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+
+// Dynamic imports — must happen after dotenv.config()
+const { default: express } = await import('express');
+const { webhookCallback } = await import('grammy');
+const { createBot } = await import('./bot/index.js');
+const { processStaleBatches } = await import('./services/batchProcessor.js');
 
 const PORT = process.env.PORT || 3000;
 
@@ -46,7 +48,7 @@ async function main() {
       },
     });
 
-    // Local dev: poll for stale batches every 15s (replaces pg_cron)
+    // Local dev: poll for stale batches every 3s (safety net)
     setInterval(async () => {
       try {
         const count = await processStaleBatches(bot);
@@ -54,7 +56,7 @@ async function main() {
       } catch (error) {
         console.error('Batch processor interval error:', error);
       }
-    }, 15_000);
+    }, 3_000);
   }
 
   // Health check endpoint

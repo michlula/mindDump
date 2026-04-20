@@ -14,7 +14,7 @@
 ```
 User sends messages → Webhook saves to pending_messages (<500ms)
                       ↓
-              10s of inactivity (or 60s max wait)
+              3s of inactivity (or 60s max wait)
                       ↓
          Batch processor triggers
                       ↓
@@ -25,18 +25,18 @@ User sends messages → Webhook saves to pending_messages (<500ms)
          Create dump(s) → Notify user via Telegram
 ```
 
-**Two triggers for batch processing:**
-1. Every webhook handler calls `processStaleBatches()` after saving (processes stale batches from previous calls)
+**Three triggers for batch processing:**
+1. Debounced per-chat timer (`scheduleBatchCheck`) — fires 3.5s after the last message (right after the 3s stale window)
 2. pg_cron calls `/api/flush` every 1 minute (safety net for single messages with no follow-up)
-3. Local dev: `setInterval` every 15s in long-polling mode
+3. Local dev: `setInterval` every 3s as safety net
 
-**Batch readiness:** A chat's batch is ready when its newest message is >10s old OR its oldest message is >60s old.
+**Batch readiness:** A chat's batch is ready when its newest message is >3s old OR its oldest message is >60s old.
 
 ## Deployment Strategy: Vercel (Free Tier)
 Both the bot and dashboard deploy as a single Vercel project — $0/month.
 - **Bot**: Runs as a serverless function via webhook (Telegram pushes updates to `/api/webhook`)
 - **Dashboard**: Builds as a static site (Vite → `dashboard/dist/`)
-- **Local dev**: Long-polling via `cd server && npm run dev` + batch processor on 15s interval
+- **Local dev**: Long-polling via `cd server && npm run dev` + batch processor on 3s interval + debounced per-chat trigger
 
 ## Database
 - 4 tables: `categories`, `dumps`, `pending_categorizations`, `pending_messages`
@@ -54,7 +54,7 @@ server/
 ├── package.json              # deps: grammy, express, @google/generative-ai, @supabase/supabase-js, sharp, open-graph-scraper, dotenv
 ├── tsconfig.json
 └── src/
-    ├── index.ts              # Express entry point, webhook/polling mode, env validation, 15s batch interval (dev)
+    ├── index.ts              # Express entry point, webhook/polling mode, env validation, 3s batch interval (dev)
     ├── types/
     │   └── index.ts          # Category, Dump, DumpInsert, PendingMessage, BatchMessage, DumpGroup, BatchResult, etc.
     ├── bot/
@@ -72,7 +72,8 @@ server/
     └── services/
         ├── supabase.ts       # Supabase client + CRUD: categories, dumps, pending_categorizations, insertPendingMessage, getStaleBatchChatIds, claimPendingBatch
         ├── categorizer.ts    # categorizeContent(), categorizeImage(), processBatch() (multimodal AI grouping + titles)
-        ├── batchProcessor.ts # processStaleBatches() — claims batches, downloads media, calls AI, creates dumps
+        ├── batchProcessor.ts # processStaleBatches() + scheduleBatchCheck() — debounced per-chat trigger, claims batches, downloads media, calls AI, creates dumps
+        ├── test-batch.ts     # Integration test script — inserts test messages, verifies batch processing
         ├── linkPreview.ts    # extractUrls(), containsUrl(), fetchLinkPreview() (3s timeout)
         └── mediaProcessor.ts # downloadTelegramFile(), processAndUploadImage(), processAndUploadVideo()
 ```

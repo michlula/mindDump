@@ -5,7 +5,7 @@ import {
   isPendingMessageExists,
   insertPendingMessage,
 } from '../../services/supabase.js';
-import { processStaleBatches } from '../../services/batchProcessor.js';
+import { scheduleBatchCheck } from '../../services/batchProcessor.js';
 
 export function createTextHandler(bot: Bot) {
   return async function handleTextMessage(ctx: Context) {
@@ -54,11 +54,7 @@ export function createTextHandler(bot: Bot) {
       return;
     }
 
-    // Best-effort: trigger batch processing for stale messages
-    try {
-      await processStaleBatches(bot);
-    } catch (error) {
-      console.error('Batch processing error (non-fatal):', error);
-    }
+    // Schedule batch check after stale window expires
+    scheduleBatchCheck(bot, chatId);
   };
 }

@@ -38,9 +38,13 @@
 - [x] Text handler absorbs link detection (link.ts deleted)
 - [x] messageGrouper.ts replaced by batchProcessor.ts
 - [x] /api/flush endpoint for pg_cron safety net
-- [x] 15s setInterval for local dev batch processing
+- [x] 3s setInterval for local dev batch processing (down from 15s)
 - [x] OG scraper timeout reduced to 3s
-- [ ] User: Run SQL migration (new pending_messages table + RPC functions)
+- [x] Stale window reduced to 3s (down from 10s)
+- [x] Debounced per-chat batch trigger (scheduleBatchCheck) — fires 3.5s after last message
+- [x] Handlers use non-blocking scheduleBatchCheck instead of sync processStaleBatches
+- [x] Integration test script (test-batch.ts) + /test-batch Claude Code skill
+- [ ] User: Run updated SQL migration in Supabase SQL Editor (stale window 10s → 3s)
 - [ ] User: Add CRON_SECRET to Vercel env vars
 - [ ] User: Set up pg_cron in Supabase
 

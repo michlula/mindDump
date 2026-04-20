@@ -8,7 +8,26 @@ import {
 import { processAndUploadImage, processAndUploadVideo } from './mediaProcessor.js';
 import { processBatch } from './categorizer.js';
 import { askForCategoryViaBot, CONFIDENCE_THRESHOLD, TYPE_ICONS } from '../bot/handlers/shared.js';
-import { BatchMessage, DumpInsert, PendingMessage } from '../types/index.js';
+import { BatchMessage, BatchResult, DumpInsert, PendingMessage } from '../types/index.js';
+
+async function retryProcessBatch(messages: BatchMessage[], maxRetries = 3): Promise<BatchResult> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await processBatch(messages);
+    } catch (error: unknown) {
+      const status = (error as { status?: number }).status;
+      const isRetryable = status === 503 || status === 429 || status === 500;
+      if (isRetryable && attempt < maxRetries) {
+        const delay = attempt * 2000; // 2s, 4s
+        console.log(`AI API error (${status}), retrying in ${delay / 1000}s (attempt ${attempt}/${maxRetries})...`);
+        await new Promise((r) => setTimeout(r, delay));
+      } else {
+        throw error;
+      }
+    }
+  }
+  throw new Error('Unreachable');
+}
 
 async function buildBatchMessage(
   bot: Bot,
@@ -48,8 +67,8 @@ async function processChatBatch(bot: Bot, chatId: number): Promise<void> {
     pendingMessages.map((p) => buildBatchMessage(bot, p))
   );
 
-  // AI grouping + titles + categories
-  const result = await processBatch(batchMessages);
+  // AI grouping + titles + categories (with retry on transient errors)
+  const result = await retryProcessBatch(batchMessages);
 
   // Create dumps for each group
   for (const group of result.groups) {
@@ -115,6 +134,25 @@ async function processChatBatch(bot: Bot, chatId: number): Promise<void> {
       console.error('Error creating dump for group:', error);
     }
   }
+}
+
+// Per-chat debounce timers: fires 3.5s after the last message (just after the 3s stale window)
+const chatTimers = new Map<number, ReturnType<typeof setTimeout>>();
+
+export function scheduleBatchCheck(bot: Bot, chatId: number): void {
+  const existing = chatTimers.get(chatId);
+  if (existing) clearTimeout(existing);
+
+  const timer = setTimeout(async () => {
+    chatTimers.delete(chatId);
+    try {
+      await processStaleBatches(bot);
+    } catch (error) {
+      console.error('Scheduled batch check error:', error);
+    }
+  }, 3_500);
+
+  chatTimers.set(chatId, timer);
 }
 
 export async function processStaleBatches(bot: Bot): Promise<number> {
