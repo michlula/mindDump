@@ -6,25 +6,32 @@ import {
   getCategoryByName,
 } from './supabase.js';
 import { processAndUploadImage, processAndUploadVideo } from './mediaProcessor.js';
-import { processBatch } from './categorizer.js';
+import { processBatch, processBatchOpenRouter } from './categorizer.js';
 import { askForCategoryViaBot, CONFIDENCE_THRESHOLD, TYPE_ICONS } from '../bot/handlers/shared.js';
 import { BatchMessage, BatchResult, DumpInsert, PendingMessage } from '../types/index.js';
 
 const FALLBACK_MODEL = 'gemini-2.0-flash';
 
-async function retryProcessBatch(messages: BatchMessage[], maxRetries = 3): Promise<BatchResult> {
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+async function retryProcessBatch(messages: BatchMessage[]): Promise<BatchResult> {
+  // Attempt 1: Primary model (gemini-2.5-flash)
+  // Attempt 2: Fallback Gemini model (gemini-2.0-flash)
+  // Attempt 3: OpenRouter (free, different provider entirely)
+  const attempts = [
+    { label: 'gemini-2.5-flash', fn: () => processBatch(messages) },
+    { label: FALLBACK_MODEL, fn: () => processBatch(messages, FALLBACK_MODEL) },
+    { label: 'OpenRouter (gemma-3-12b)', fn: () => processBatchOpenRouter(messages) },
+  ];
+
+  for (let i = 0; i < attempts.length; i++) {
     try {
-      // Last attempt: use fallback model
-      const modelName = attempt === maxRetries ? FALLBACK_MODEL : undefined;
-      if (modelName) console.log(`Switching to fallback model: ${FALLBACK_MODEL}`);
-      return await processBatch(messages, modelName);
+      if (i > 0) console.log(`Switching to fallback: ${attempts[i].label}`);
+      return await attempts[i].fn();
     } catch (error: unknown) {
       const status = (error as { status?: number }).status;
       const isRetryable = status === 503 || status === 429 || status === 500;
-      if (isRetryable && attempt < maxRetries) {
-        const delay = attempt * 2000; // 2s, 4s
-        console.log(`AI API error (${status}), retrying in ${delay / 1000}s (attempt ${attempt}/${maxRetries})...`);
+      if (isRetryable && i < attempts.length - 1) {
+        const delay = (i + 1) * 2000;
+        console.log(`AI API error (${status}) on ${attempts[i].label}, retrying in ${delay / 1000}s...`);
         await new Promise((r) => setTimeout(r, delay));
       } else {
         throw error;
