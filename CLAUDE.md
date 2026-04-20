@@ -27,7 +27,7 @@ Mind Dump is a personal content-saving system using a Telegram bot for input and
 - Server uses long-polling in dev (no WEBHOOK_URL needed)
 
 ## Environment
-- `.env` at project root — shared by server (loaded via dotenv)
+- `.env` at `server/.env` — loaded via dotenv with dynamic imports
 - Dashboard uses VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY (prefixed for Vite)
 
 ## Important Notes
@@ -38,3 +38,4 @@ Mind Dump is a personal content-saving system using a Telegram bot for input and
 - pending_categorizations table stores uncertain AI results (survives restarts)
 - Update `progress.md` after completing each task
 - Update `context.md` when significant changes are made
+- Commit and push after every required fix
