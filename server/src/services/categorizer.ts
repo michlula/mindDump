@@ -4,6 +4,9 @@ import { getCategories } from './supabase.js';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
+const PRIMARY_MODEL = 'gemini-2.5-flash';
+const FALLBACK_MODEL = 'gemini-2.0-flash';
+
 export async function categorizeContent(
   content: string,
   contentType: 'text' | 'link' | 'image' | 'video'
@@ -12,7 +15,7 @@ export async function categorizeContent(
     const categories = await getCategories();
     const categoryList = categories.map((c) => c.name).join(', ');
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const model = genAI.getGenerativeModel({ model: PRIMARY_MODEL });
 
     const prompt = `You are a content categorizer. Classify the following ${contentType} content into exactly one of these categories: ${categoryList}.
 
@@ -58,7 +61,7 @@ export async function categorizeImage(
     const categories = await getCategories();
     const categoryList = categories.map((c) => c.name).join(', ');
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const model = genAI.getGenerativeModel({ model: PRIMARY_MODEL });
 
     const imagePart = {
       inlineData: {
@@ -101,12 +104,12 @@ Rules:
   }
 }
 
-export async function processBatch(messages: BatchMessage[]): Promise<BatchResult> {
+export async function processBatch(messages: BatchMessage[], modelName?: string): Promise<BatchResult> {
   try {
     const categories = await getCategories();
     const categoryList = categories.map((c) => c.name).join(', ');
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const model = genAI.getGenerativeModel({ model: modelName || PRIMARY_MODEL });
 
     // Build multimodal parts
     const parts: Part[] = [];

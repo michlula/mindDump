@@ -10,10 +10,15 @@ import { processBatch } from './categorizer.js';
 import { askForCategoryViaBot, CONFIDENCE_THRESHOLD, TYPE_ICONS } from '../bot/handlers/shared.js';
 import { BatchMessage, BatchResult, DumpInsert, PendingMessage } from '../types/index.js';
 
+const FALLBACK_MODEL = 'gemini-2.0-flash';
+
 async function retryProcessBatch(messages: BatchMessage[], maxRetries = 3): Promise<BatchResult> {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      return await processBatch(messages);
+      // Last attempt: use fallback model
+      const modelName = attempt === maxRetries ? FALLBACK_MODEL : undefined;
+      if (modelName) console.log(`Switching to fallback model: ${FALLBACK_MODEL}`);
+      return await processBatch(messages, modelName);
     } catch (error: unknown) {
       const status = (error as { status?: number }).status;
       const isRetryable = status === 503 || status === 429 || status === 500;
