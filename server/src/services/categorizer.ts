@@ -209,7 +209,11 @@ Rules:
     return parsed;
   } catch (error) {
     console.error('AI batch processing failed:', error);
-    // Fallback: each message as its own group
+    const status = (error as { status?: number }).status;
+    if (status === 503 || status === 429 || status === 500) {
+      throw error; // Rethrow retryable errors for retry wrapper
+    }
+    // Non-retryable: fallback — each message as its own group
     return {
       groups: messages.map((msg, i) => ({
         title: msg.content?.slice(0, 30) || 'Untitled',
