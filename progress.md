@@ -44,9 +44,10 @@
 - [x] Debounced per-chat batch trigger (scheduleBatchCheck) — fires 3.5s after last message
 - [x] Handlers use non-blocking scheduleBatchCheck instead of sync processStaleBatches
 - [x] Integration test script (test-batch.ts) + /test-batch Claude Code skill
-- [ ] User: Run updated SQL migration in Supabase SQL Editor (stale window 10s → 3s)
-- [ ] User: Add CRON_SECRET to Vercel env vars
-- [ ] User: Set up pg_cron in Supabase
+- [x] User: Run updated SQL migration in Supabase SQL Editor (stale window 10s → 3s)
+- [x] Vercel Cron job calls /api/flush every minute (replaces pg_cron)
+- [x] Webhook handler calls processStaleBatches() after each update (opportunistic processing)
+- [ ] User: Add CRON_SECRET to Vercel env vars (optional — flush works without it)
 
 ## Future
 - [ ] Security: Authentication for dashboard, private RLS policies

@@ -25,10 +25,11 @@ User sends messages → Webhook saves to pending_messages (<500ms)
          Create dump(s) → Notify user via Telegram
 ```
 
-**Three triggers for batch processing:**
-1. Debounced per-chat timer (`scheduleBatchCheck`) — fires 3.5s after the last message (right after the 3s stale window)
-2. pg_cron calls `/api/flush` every 1 minute (safety net for single messages with no follow-up)
-3. Local dev: `setInterval` every 3s as safety net
+**Four triggers for batch processing:**
+1. Debounced per-chat timer (`scheduleBatchCheck`) — fires 3.5s after the last message (works in local dev; timer dies harmlessly on Vercel)
+2. Opportunistic processing — webhook handler calls `processStaleBatches()` after handling each update (processes batches stale from earlier messages)
+3. Vercel Cron calls `/api/flush` every 1 minute (reliable safety net for single messages with no follow-up)
+4. Local dev: `setInterval` every 3s as safety net
 
 **Batch readiness:** A chat's batch is ready when its newest message is >3s old OR its oldest message is >60s old.
 
@@ -118,7 +119,7 @@ mindDump/
 - **Dashboard**: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY (in `dashboard/.env`)
 
 ## Pending Setup (User)
-- [ ] Run SQL migration in Supabase SQL Editor (new pending_messages table + RPC functions)
-- [ ] Add CRON_SECRET env var to Vercel
+- [x] Run SQL migration in Supabase SQL Editor (new pending_messages table + RPC functions)
+- [x] Update get_stale_batch_chats() stale window to 3 seconds
+- [ ] Add CRON_SECRET env var to Vercel (optional — flush works without it)
 - [ ] Visit /api/setup to re-register webhook after deploy
-- [ ] Set up pg_cron in Supabase to call /api/flush every minute
