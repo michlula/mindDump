@@ -2,5 +2,8 @@
   "private": true,
   "devDependencies": {
     "@vercel/node": "^5.0.0"
+  },
+  "dependencies": {
+    "@vercel/functions": "^3.4.4"
   }
 }

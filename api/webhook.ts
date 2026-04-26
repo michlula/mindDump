@@ -1,4 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'http';
+import { waitUntil } from '@vercel/functions';
 
 export default async function handler(req: IncomingMessage, res: ServerResponse) {
   const { createBot, webhookCallback } = await import('../server/src/bot/index.js');
@@ -8,8 +9,16 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   const handle = webhookCallback(bot, 'https');
   await handle(req, res);
 
-  // Opportunistically process any stale batches (>3s old) before the function terminates
+  // Process any already-stale batches (from earlier messages >3s ago)
   await processStaleBatches(bot).catch((err: unknown) =>
     console.error('processStaleBatches error:', err)
+  );
+
+  // Keep function alive to process the batch that was just saved
+  // (needs ~4s to pass the 3s stale window)
+  waitUntil(
+    new Promise<void>(resolve => setTimeout(resolve, 4000))
+      .then(() => processStaleBatches(bot))
+      .catch((err: unknown) => console.error('Delayed processStaleBatches error:', err))
   );
 }
