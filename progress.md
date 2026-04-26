@@ -23,7 +23,7 @@
 ## Phase 6: Dashboard Polish — DONE (partial)
 - [x] Full-text search, pin/delete, dark mode
 - [ ] Category management from dashboard — future
-- [ ] Filter by content type — future
+- [x] Filter by content type (text/link/image/video chips with counters)
 
 ## Phase 7: Vercel Deployment — DONE
 - [x] ESM migration, api/webhook.ts, api/setup.ts, vercel.json

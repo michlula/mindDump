@@ -54,6 +54,12 @@ Both the bot and dashboard deploy as a single Vercel project — $0/month.
 - Full-text search index on `dumps.search_vector`
 - Storage bucket: "media" (public)
 
+## Dashboard Features
+- Category tabs with counts (sticky below header)
+- Content type filter chips with counts: All / Text / Links / Images / Videos (sticky below category tabs)
+- Both filters combine (intersection): e.g. "Recipes" + "image" = only image dumps in Recipes
+- Full-text search overlay, pin/delete, dark mode, infinite scroll
+
 ## Key Files
 
 ### Vercel Serverless Functions (`api/`)
