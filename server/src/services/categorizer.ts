@@ -126,11 +126,11 @@ export async function processBatch(messages: BatchMessage[], modelName?: string)
       if (msg.media_url && msg.message_type === 'video') messageDescriptions += ' (video)';
     }
 
-    const prompt = `You are a content organizer. You receive a batch of messages sent by a user to their personal "mind dump" app.
+    const prompt = `You are a content organizer. You receive a batch of messages sent by a user to their personal "mind dump" app. These messages were sent in quick succession and should usually be treated as ONE thought/topic.
 
 Your job:
-1. GROUP related messages together (e.g., a photo + its caption, multiple photos of the same topic)
-2. Generate a short TITLE (2-6 words) for each group that describes the content
+1. GROUP messages together — default to ONE group unless messages are about completely different topics
+2. Generate a short TITLE (2-6 words, in Hebrew) for each group
 3. CATEGORIZE each group into one of: ${categoryList}
 4. Assign a CONFIDENCE score (0-1) for the category
 
@@ -140,7 +140,7 @@ Respond with ONLY a JSON object (no markdown, no code blocks):
 {
   "groups": [
     {
-      "title": "Short Descriptive Title",
+      "title": "כותרת קצרה בעברית",
       "category": "CategoryName",
       "confidence": 0.85,
       "type": "image",
@@ -150,11 +150,11 @@ Respond with ONLY a JSON object (no markdown, no code blocks):
 }
 
 Rules:
+- PREFER grouping all messages into a single group. Only split into multiple groups if the topics are clearly unrelated (e.g., a recipe and a job posting)
 - Every message index (0 to ${messages.length - 1}) must appear in exactly one group
 - "type" should be the primary content type of the group: "image" if it contains images, "video" if video, "link" if links, "text" otherwise
 - "category" must be exactly one of: ${categoryList}
-- "title" MUST be in Hebrew, descriptive and concise (2-6 words), like "תמונת שקיעה בחוף" or "קישור למדריך React"
-- If messages are clearly unrelated, put them in separate groups
+- "title" MUST be in Hebrew, descriptive and concise (2-6 words)
 - Default category to "General" if unsure`;
 
     parts.push({ text: prompt });
@@ -247,11 +247,11 @@ export async function processBatchOpenRouter(messages: BatchMessage[]): Promise<
     if (msg.image_buffer) messageDescriptions += ' (image — describe based on context)';
   }
 
-  const prompt = `You are a content organizer. You receive a batch of messages sent by a user to their personal "mind dump" app.
+  const prompt = `You are a content organizer. You receive a batch of messages sent by a user to their personal "mind dump" app. These messages were sent in quick succession and should usually be treated as ONE thought/topic.
 
 Your job:
-1. GROUP related messages together (e.g., a photo + its caption, multiple photos of the same topic)
-2. Generate a short TITLE (2-6 words) for each group that describes the content
+1. GROUP messages together — default to ONE group unless messages are about completely different topics
+2. Generate a short TITLE (2-6 words, in Hebrew) for each group
 3. CATEGORIZE each group into one of: ${categoryList}
 4. Assign a CONFIDENCE score (0-1) for the category
 
@@ -261,7 +261,7 @@ Respond with ONLY a JSON object (no markdown, no code blocks):
 {
   "groups": [
     {
-      "title": "Short Descriptive Title",
+      "title": "כותרת קצרה בעברית",
       "category": "CategoryName",
       "confidence": 0.85,
       "type": "image",
@@ -271,11 +271,11 @@ Respond with ONLY a JSON object (no markdown, no code blocks):
 }
 
 Rules:
+- PREFER grouping all messages into a single group. Only split into multiple groups if the topics are clearly unrelated (e.g., a recipe and a job posting)
 - Every message index (0 to ${messages.length - 1}) must appear in exactly one group
 - "type" should be the primary content type of the group: "image" if it contains images, "video" if video, "link" if links, "text" otherwise
 - "category" must be exactly one of: ${categoryList}
-- "title" MUST be in Hebrew, descriptive and concise (2-6 words), like "תמונת שקיעה בחוף" or "קישור למדריך React"
-- If messages are clearly unrelated, put them in separate groups
+- "title" MUST be in Hebrew, descriptive and concise (2-6 words)
 - Default category to "General" if unsure`;
 
   const response = await fetch(OPENROUTER_URL, {
