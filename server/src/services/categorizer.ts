@@ -155,7 +155,7 @@ Rules:
 - "type" should be the primary content type of the group: "image" if it contains images, "video" if video, "link" if links, "text" otherwise
 - "category" must be exactly one of: ${categoryList}
 - "title" MUST be in Hebrew, descriptive and concise (2-6 words)
-- When a group has both media (image/video) AND a text message, the text message is the user's own description — base the title on that text, not on analyzing the media content. For example: image of a restaurant + text "דייט עם אלעד" → title should be "דייט עם אלעד", not "תפריט מסעדה"
+- When a group has multiple messages (e.g., image+text, link+text, video+text), check if the text message relates to the other content. If it does, prefer basing the title on the user's text. For example: image of a restaurant + text "דייט עם אלעד" → title "דייט עם אלעד". But if the text is unrelated, use your best judgment combining all content
 - Default category to "General" if unsure`;
 
     parts.push({ text: prompt });
@@ -277,7 +277,7 @@ Rules:
 - "type" should be the primary content type of the group: "image" if it contains images, "video" if video, "link" if links, "text" otherwise
 - "category" must be exactly one of: ${categoryList}
 - "title" MUST be in Hebrew, descriptive and concise (2-6 words)
-- When a group has both media (image/video) AND a text message, the text message is the user's own description — base the title on that text, not on analyzing the media content
+- When a group has multiple messages (e.g., image+text, link+text, video+text), check if the text message relates to the other content. If it does, prefer basing the title on the user's text. If unrelated, use your best judgment combining all content
 - Default category to "General" if unsure`;
 
   const response = await fetch(OPENROUTER_URL, {
