@@ -153,7 +153,7 @@ Rules:
 - Every message index (0 to ${messages.length - 1}) must appear in exactly one group
 - "type" should be the primary content type of the group: "image" if it contains images, "video" if video, "link" if links, "text" otherwise
 - "category" must be exactly one of: ${categoryList}
-- "title" should be descriptive and concise (2-6 words), like "Sunset Beach Photo" or "React Tutorial Link"
+- "title" MUST be in Hebrew, descriptive and concise (2-6 words), like "תמונת שקיעה בחוף" or "קישור למדריך React"
 - If messages are clearly unrelated, put them in separate groups
 - Default category to "General" if unsure`;
 
@@ -274,7 +274,7 @@ Rules:
 - Every message index (0 to ${messages.length - 1}) must appear in exactly one group
 - "type" should be the primary content type of the group: "image" if it contains images, "video" if video, "link" if links, "text" otherwise
 - "category" must be exactly one of: ${categoryList}
-- "title" should be descriptive and concise (2-6 words), like "Sunset Beach Photo" or "React Tutorial Link"
+- "title" MUST be in Hebrew, descriptive and concise (2-6 words), like "תמונת שקיעה בחוף" or "קישור למדריך React"
 - If messages are clearly unrelated, put them in separate groups
 - Default category to "General" if unsure`;
 

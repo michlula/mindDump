@@ -15,9 +15,9 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   );
 
   // Keep function alive to process the batch that was just saved
-  // (needs ~4s to pass the 3s stale window)
+  // Wait 5s to pass the 3s stale window with margin for rapid messages
   waitUntil(
-    new Promise<void>(resolve => setTimeout(resolve, 4000))
+    new Promise<void>(resolve => setTimeout(resolve, 5000))
       .then(() => processStaleBatches(bot))
       .catch((err: unknown) => console.error('Delayed processStaleBatches error:', err))
   );
