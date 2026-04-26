@@ -155,6 +155,7 @@ Rules:
 - "type" should be the primary content type of the group: "image" if it contains images, "video" if video, "link" if links, "text" otherwise
 - "category" must be exactly one of: ${categoryList}
 - "title" MUST be in Hebrew, descriptive and concise (2-6 words)
+- When a group has both media (image/video) AND a text message, the text message is the user's own description — base the title on that text, not on analyzing the media content. For example: image of a restaurant + text "דייט עם אלעד" → title should be "דייט עם אלעד", not "תפריט מסעדה"
 - Default category to "General" if unsure`;
 
     parts.push({ text: prompt });
@@ -276,6 +277,7 @@ Rules:
 - "type" should be the primary content type of the group: "image" if it contains images, "video" if video, "link" if links, "text" otherwise
 - "category" must be exactly one of: ${categoryList}
 - "title" MUST be in Hebrew, descriptive and concise (2-6 words)
+- When a group has both media (image/video) AND a text message, the text message is the user's own description — base the title on that text, not on analyzing the media content
 - Default category to "General" if unsure`;
 
   const response = await fetch(OPENROUTER_URL, {
