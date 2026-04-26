@@ -37,3 +37,24 @@ export function useCategoryCounts() {
     },
   });
 }
+
+export function useTypeCounts() {
+  return useQuery<Record<string, number>>({
+    queryKey: ['typeCounts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('dumps')
+        .select('type');
+
+      if (error) throw error;
+
+      const counts: Record<string, number> = {};
+      data.forEach((d) => {
+        if (d.type) {
+          counts[d.type] = (counts[d.type] || 0) + 1;
+        }
+      });
+      return counts;
+    },
+  });
+}
