@@ -29,25 +29,16 @@
 - [x] ESM migration, api/webhook.ts, api/setup.ts, vercel.json
 - [x] Deployed and working on free tier
 
-## Phase 8: Batch Processing Pipeline — DONE (code complete)
-- [x] Replace immediate processing with save-fast / process-later pipeline
-- [x] New pending_messages schema (text/image/video/link with file_id)
-- [x] Batch processor service with atomic claim-and-process (batchProcessor.ts)
-- [x] Multimodal AI batch function: grouping + titles + categories in one Gemini call
-- [x] Thin webhook handlers — just save to pending_messages (<500ms)
-- [x] Text handler absorbs link detection (link.ts deleted)
-- [x] messageGrouper.ts replaced by batchProcessor.ts
-- [x] /api/flush endpoint for pg_cron safety net
-- [x] 3s setInterval for local dev batch processing (down from 15s)
-- [x] OG scraper timeout reduced to 3s
-- [x] Stale window reduced to 3s (down from 10s)
-- [x] Debounced per-chat batch trigger (scheduleBatchCheck) — fires 3.5s after last message
-- [x] Handlers use non-blocking scheduleBatchCheck instead of sync processStaleBatches
+## Phase 8: Batch Processing Pipeline — DONE
+- [x] Save-fast / process-later pipeline with pending_messages table
+- [x] Batch processor with atomic claim-and-process (batchProcessor.ts)
+- [x] Multimodal AI batch: grouping + titles + categories in one Gemini call
+- [x] AI retry chain: Gemini 2.5 Flash → 2.0 Flash → OpenRouter (Gemma 3 12B)
+- [x] Vercel serverless fix: `waitUntil` for delayed batch processing after webhook response
+- [x] Vercel Cron daily safety net (`/api/flush`)
+- [x] Webhook re-exports `webhookCallback` (api/ can't import grammy directly)
+- [x] Hebrew titles, grouping bias toward single dump, user text preferred for titles
 - [x] Integration test script (test-batch.ts) + /test-batch Claude Code skill
-- [x] User: Run updated SQL migration in Supabase SQL Editor (stale window 10s → 3s)
-- [x] Vercel Cron job calls /api/flush every minute (replaces pg_cron)
-- [x] Webhook handler calls processStaleBatches() after each update (opportunistic processing)
-- [ ] User: Add CRON_SECRET to Vercel env vars (optional — flush works without it)
 
 ## Future
 - [ ] Security: Authentication for dashboard, private RLS policies
