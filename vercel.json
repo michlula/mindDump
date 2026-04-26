@@ -8,5 +8,5 @@
       "includeFiles": "server/**"
     }
   },
-  "crons": [{ "path": "/api/flush", "schedule": "* * * * *" }]
+  "crons": [{ "path": "/api/flush", "schedule": "0 * * * *" }]
 }
