@@ -1,4 +1,5 @@
 import { Bot, webhookCallback } from 'grammy';
+export { webhookCallback };
 import { startCommand } from './commands/start.js';
 import { categoriesCommand } from './commands/categories.js';
 import { recentCommand } from './commands/recent.js';

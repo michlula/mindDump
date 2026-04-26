@@ -1,9 +1,8 @@
 import type { IncomingMessage, ServerResponse } from 'http';
 
 export default async function handler(req: IncomingMessage, res: ServerResponse) {
-  const { createBot } = await import('../server/src/bot/index.js');
+  const { createBot, webhookCallback } = await import('../server/src/bot/index.js');
   const { processStaleBatches } = await import('../server/src/services/batchProcessor.js');
-  const { webhookCallback } = await import('grammy');
 
   const bot = createBot(process.env.TELEGRAM_BOT_TOKEN!);
   const handle = webhookCallback(bot, 'https');
