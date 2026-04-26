@@ -4,9 +4,9 @@ import { Dump } from '../types';
 
 const PAGE_SIZE = 20;
 
-export function useDumps(categoryId: string | null) {
+export function useDumps(categoryId: string | null, contentType: string | null = null) {
   return useInfiniteQuery<Dump[]>({
-    queryKey: ['dumps', categoryId],
+    queryKey: ['dumps', categoryId, contentType],
     queryFn: async ({ pageParam }) => {
       let query = supabase
         .from('dumps')
@@ -17,6 +17,10 @@ export function useDumps(categoryId: string | null) {
 
       if (categoryId) {
         query = query.eq('category_id', categoryId);
+      }
+
+      if (contentType) {
+        query = query.eq('type', contentType);
       }
 
       const { data, error } = await query;

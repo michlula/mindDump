@@ -4,9 +4,10 @@ import { DumpCard } from './DumpCard';
 
 interface DumpListProps {
   categoryId: string | null;
+  contentType?: string | null;
 }
 
-export function DumpList({ categoryId }: DumpListProps) {
+export function DumpList({ categoryId, contentType = null }: DumpListProps) {
   const {
     data,
     isLoading,
@@ -14,7 +15,7 @@ export function DumpList({ categoryId }: DumpListProps) {
     hasNextPage,
     fetchNextPage,
     refetch,
-  } = useDumps(categoryId);
+  } = useDumps(categoryId, contentType);
 
   const observerRef = useRef<IntersectionObserver | null>(null);
 
