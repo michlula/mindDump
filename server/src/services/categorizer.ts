@@ -166,7 +166,7 @@ Rules:
 - "title" MUST be in Hebrew, descriptive and concise (2-6 words)
 - When a group has multiple messages (e.g., image+text, link+text, video+text), check if the text message relates to the other content. If it does, prefer basing the title on the user's text. For example: image of a restaurant + text "דייט עם אלעד" → title "דייט עם אלעד". But if the text is unrelated, use your best judgment combining all content
 - Default category to "General" if unsure
-- "event_date": Extract the ACTUAL date the content refers to, NOT today's date. Parse date formats: "3/5" = day 3 month 5 (May 3rd), "3/5/2026" = May 3 2026, "15 ינואר" = January 15. Resolve relative dates like "tomorrow", "next Thursday", "ביום שלישי" relative to today (${today}). If no year is specified, use the current year (${currentYear}), or next year if the month has already passed. Set to null ONLY if no date is mentioned at all. Must be YYYY-MM-DD format or null`;
+- "event_date": Extract the ACTUAL date the content refers to, NOT today's date. CRITICAL: The user is Israeli — dates use DD/MM format (day first, then month). "3/5" means the 3rd of May → "2026-05-03". "15/1" means January 15th → "2026-01-15". NEVER interpret as American MM/DD. Also parse Hebrew dates: "15 ינואר" = January 15. Resolve relative dates ("tomorrow", "next Thursday", "ביום שלישי") relative to today (${today}). If no year specified, use ${currentYear}, or next year if that month already passed. Set to null ONLY if no date is mentioned at all. Must be YYYY-MM-DD or null`;
 
     parts.push({ text: prompt });
 
@@ -305,7 +305,7 @@ Rules:
 - "title" MUST be in Hebrew, descriptive and concise (2-6 words)
 - When a group has multiple messages (e.g., image+text, link+text, video+text), check if the text message relates to the other content. If it does, prefer basing the title on the user's text. If unrelated, use your best judgment combining all content
 - Default category to "General" if unsure
-- "event_date": Extract the ACTUAL date the content refers to, NOT today's date. Parse date formats: "3/5" = day 3 month 5 (May 3rd), "3/5/2026" = May 3 2026, "15 ינואר" = January 15. Resolve relative dates like "tomorrow", "next Thursday", "ביום שלישי" relative to today (${today}). If no year is specified, use the current year (${currentYear}), or next year if the month has already passed. Set to null ONLY if no date is mentioned at all. Must be YYYY-MM-DD format or null`;
+- "event_date": Extract the ACTUAL date the content refers to, NOT today's date. CRITICAL: The user is Israeli — dates use DD/MM format (day first, then month). "3/5" means the 3rd of May → "2026-05-03". "15/1" means January 15th → "2026-01-15". NEVER interpret as American MM/DD. Also parse Hebrew dates: "15 ינואר" = January 15. Resolve relative dates ("tomorrow", "next Thursday", "ביום שלישי") relative to today (${today}). If no year specified, use ${currentYear}, or next year if that month already passed. Set to null ONLY if no date is mentioned at all. Must be YYYY-MM-DD or null`;
 
   const response = await fetch(OPENROUTER_URL, {
     method: 'POST',
