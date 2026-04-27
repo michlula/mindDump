@@ -27,4 +27,5 @@ export interface LinkMetadata {
   image?: string;
   siteName?: string;
   url?: string;
+  event_date?: string | null;
 }

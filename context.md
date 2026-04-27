@@ -39,6 +39,7 @@ User sends messages → Webhook saves to pending_messages (<500ms)
 - Messages sent in quick succession biased toward **single group** (only split if clearly unrelated)
 - When a group has multiple messages (image+text, link+text, etc.), user's text is preferred for title if it relates to the other content
 - AI retry chain: Gemini 2.5 Flash → Gemini 2.0 Flash → OpenRouter (Gemma 3 12B)
+- **Date detection**: AI extracts `event_date` (YYYY-MM-DD) from content mentioning dates ("tomorrow", "next Thursday", "Jan 15"). Today's date + day of week provided in prompt for resolving relative dates. Validated with regex; null if no date detected.
 
 ## Deployment Strategy: Vercel (Free Tier)
 Both the bot and dashboard deploy as a single Vercel project — $0/month.
@@ -59,6 +60,7 @@ Both the bot and dashboard deploy as a single Vercel project — $0/month.
 - Content type filter chips with counts: All / Text / Links / Images / Videos (sticky below category tabs)
 - Both filters combine (intersection): e.g. "Recipes" + "image" = only image dumps in Recipes
 - Full-text search overlay, pin/delete, dark mode, infinite scroll
+- **Calendar view**: Month-view calendar showing dumps with detected event dates. Toggle via calendar icon in header. Day dots indicate events; clicking a day shows DumpCards. Category/content filters hidden in calendar mode.
 
 ## Key Files
 

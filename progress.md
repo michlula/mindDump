@@ -40,7 +40,20 @@
 - [x] Hebrew titles, grouping bias toward single dump, user text preferred for titles
 - [x] Integration test script (test-batch.ts) + /test-batch Claude Code skill
 
+## Phase 9: Calendar Feature — DONE
+- [x] Server: Add `event_date` field to DumpGroup type
+- [x] Server: AI date detection in batch prompts (processBatch + processBatchOpenRouter)
+- [x] Server: Validate event_date format (YYYY-MM-DD regex), resolve relative dates via today's date in prompt
+- [x] Server: Store event_date in dump metadata (batchProcessor)
+- [x] Dashboard: Add event_date to LinkMetadata type
+- [x] Dashboard: useCalendarDumps hook (PostgREST JSONB filtering by month)
+- [x] Dashboard: CalendarView component (month grid, day dots, today highlight, day detail panel)
+- [x] Dashboard: Calendar toggle button in Header
+- [x] Dashboard: Wire calendar view into AppShell (hide filters in calendar mode)
+
 ## Future
 - [ ] Security: Authentication for dashboard, private RLS policies
 - [ ] Dashboard: Display AI-generated titles on DumpCard
 - [ ] Dashboard: Add `title` column to dumps table for display
+- [ ] Dashboard: Redesign UI for a more visually appealing look and feel
+- [ ] Calendar: Sync events to phone calendar (stretch goal)

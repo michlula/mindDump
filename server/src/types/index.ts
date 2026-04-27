@@ -67,6 +67,7 @@ export interface DumpGroup {
   confidence: number;
   type: 'text' | 'link' | 'image' | 'video';
   message_indices: number[];
+  event_date?: string | null;
 }
 
 export interface BatchResult {
