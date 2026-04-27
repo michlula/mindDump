@@ -126,8 +126,10 @@ export async function processBatch(messages: BatchMessage[], modelName?: string)
       if (msg.media_url && msg.message_type === 'video') messageDescriptions += ' (video)';
     }
 
-    const today = new Date().toISOString().split('T')[0];
-    const dayOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][new Date().getDay()];
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    const currentYear = now.getFullYear();
+    const dayOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][now.getDay()];
 
     const prompt = `You are a content organizer. You receive a batch of messages sent by a user to their personal "mind dump" app. These messages were sent in quick succession and should usually be treated as ONE thought/topic.
 
@@ -138,7 +140,7 @@ Your job:
 2. Generate a short TITLE (2-6 words, in Hebrew) for each group
 3. CATEGORIZE each group into one of: ${categoryList}
 4. Assign a CONFIDENCE score (0-1) for the category
-5. DETECT if the content mentions a date or time-related event → set "event_date" to YYYY-MM-DD format, or null if no date is mentioned
+5. DETECT if the content mentions a specific date or event date → set "event_date" to that date in YYYY-MM-DD format, or null if no date is mentioned
 
 Messages:${messageDescriptions}
 
@@ -164,7 +166,7 @@ Rules:
 - "title" MUST be in Hebrew, descriptive and concise (2-6 words)
 - When a group has multiple messages (e.g., image+text, link+text, video+text), check if the text message relates to the other content. If it does, prefer basing the title on the user's text. For example: image of a restaurant + text "דייט עם אלעד" → title "דייט עם אלעד". But if the text is unrelated, use your best judgment combining all content
 - Default category to "General" if unsure
-- "event_date": resolve relative dates like "tomorrow", "next Thursday", "ביום שלישי" relative to today (${today}). Set to null if no date is mentioned. Must be YYYY-MM-DD format or null`;
+- "event_date": Extract the ACTUAL date the content refers to, NOT today's date. Parse date formats: "3/5" = day 3 month 5 (May 3rd), "3/5/2026" = May 3 2026, "15 ינואר" = January 15. Resolve relative dates like "tomorrow", "next Thursday", "ביום שלישי" relative to today (${today}). If no year is specified, use the current year (${currentYear}), or next year if the month has already passed. Set to null ONLY if no date is mentioned at all. Must be YYYY-MM-DD format or null`;
 
     parts.push({ text: prompt });
 
@@ -263,8 +265,10 @@ export async function processBatchOpenRouter(messages: BatchMessage[]): Promise<
     if (msg.image_buffer) messageDescriptions += ' (image — describe based on context)';
   }
 
-  const today = new Date().toISOString().split('T')[0];
-  const dayOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][new Date().getDay()];
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+  const currentYear = now.getFullYear();
+  const dayOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][now.getDay()];
 
   const prompt = `You are a content organizer. You receive a batch of messages sent by a user to their personal "mind dump" app. These messages were sent in quick succession and should usually be treated as ONE thought/topic.
 
@@ -275,7 +279,7 @@ Your job:
 2. Generate a short TITLE (2-6 words, in Hebrew) for each group
 3. CATEGORIZE each group into one of: ${categoryList}
 4. Assign a CONFIDENCE score (0-1) for the category
-5. DETECT if the content mentions a date or time-related event → set "event_date" to YYYY-MM-DD format, or null if no date is mentioned
+5. DETECT if the content mentions a specific date or event date → set "event_date" to that date in YYYY-MM-DD format, or null if no date is mentioned
 
 Messages:${messageDescriptions}
 
@@ -301,7 +305,7 @@ Rules:
 - "title" MUST be in Hebrew, descriptive and concise (2-6 words)
 - When a group has multiple messages (e.g., image+text, link+text, video+text), check if the text message relates to the other content. If it does, prefer basing the title on the user's text. If unrelated, use your best judgment combining all content
 - Default category to "General" if unsure
-- "event_date": resolve relative dates like "tomorrow", "next Thursday", "ביום שלישי" relative to today (${today}). Set to null if no date is mentioned. Must be YYYY-MM-DD format or null`;
+- "event_date": Extract the ACTUAL date the content refers to, NOT today's date. Parse date formats: "3/5" = day 3 month 5 (May 3rd), "3/5/2026" = May 3 2026, "15 ינואר" = January 15. Resolve relative dates like "tomorrow", "next Thursday", "ביום שלישי" relative to today (${today}). If no year is specified, use the current year (${currentYear}), or next year if the month has already passed. Set to null ONLY if no date is mentioned at all. Must be YYYY-MM-DD format or null`;
 
   const response = await fetch(OPENROUTER_URL, {
     method: 'POST',
