@@ -61,6 +61,6 @@
 
 ## Future
 - [ ] Security: Authentication for dashboard, private RLS policies
-- [ ] Dashboard: Inline edit dump title from DumpCard
+- [x] Dashboard: Inline edit dump title from DumpCard
 - [ ] Dashboard: Redesign UI for a more visually appealing look and feel
 - [ ] Calendar: Sync events to phone calendar (stretch goal)

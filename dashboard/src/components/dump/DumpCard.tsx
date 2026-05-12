@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Dump } from '../../types';
 import { LinkPreview } from './LinkPreview';
 import { MediaViewer } from './MediaViewer';
-import { useDeleteDump, useTogglePin } from '../../hooks/useDumps';
+import { useDeleteDump, useTogglePin, useUpdateDumpTitle } from '../../hooks/useDumps';
 
 interface DumpCardProps {
   dump: Dump;
@@ -11,8 +11,30 @@ interface DumpCardProps {
 export function DumpCard({ dump }: DumpCardProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [showViewer, setShowViewer] = useState(false);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editValue, setEditValue] = useState('');
   const deleteDump = useDeleteDump();
   const togglePin = useTogglePin();
+  const updateTitle = useUpdateDumpTitle();
+
+  const startEditingTitle = () => {
+    const currentTitle = dump.title || dump.content;
+    setEditValue(currentTitle);
+    setIsEditingTitle(true);
+    setShowMenu(false);
+  };
+
+  const saveTitle = () => {
+    const trimmed = editValue.trim();
+    if (trimmed && trimmed !== (dump.title || dump.content)) {
+      updateTitle.mutate({ id: dump.id, title: trimmed });
+    }
+    setIsEditingTitle(false);
+  };
+
+  const cancelEditing = () => {
+    setIsEditingTitle(false);
+  };
 
   const category = dump.categories;
   const timeStr = new Date(dump.created_at).toLocaleString(undefined, {
@@ -42,13 +64,47 @@ export function DumpCard({ dump }: DumpCardProps) {
 
         {/* Content */}
         <div className="p-4">
-          {dump.type === 'text' && <TextContent dump={dump} />}
-          {dump.type === 'link' && <LinkPreview dump={dump} />}
+          {dump.type === 'text' && (
+            <TextContent
+              dump={dump}
+              isEditingTitle={isEditingTitle}
+              editValue={editValue}
+              onEditChange={setEditValue}
+              onSave={saveTitle}
+              onCancel={cancelEditing}
+            />
+          )}
+          {dump.type === 'link' && (
+            <LinkPreview
+              dump={dump}
+              isEditingTitle={isEditingTitle}
+              editValue={editValue}
+              onEditChange={setEditValue}
+              onSave={saveTitle}
+              onCancel={cancelEditing}
+            />
+          )}
           {dump.type === 'image' && (
-            <ImageContent dump={dump} onView={() => setShowViewer(true)} />
+            <ImageContent
+              dump={dump}
+              onView={() => setShowViewer(true)}
+              isEditingTitle={isEditingTitle}
+              editValue={editValue}
+              onEditChange={setEditValue}
+              onSave={saveTitle}
+              onCancel={cancelEditing}
+            />
           )}
           {dump.type === 'video' && (
-            <VideoContent dump={dump} onView={() => setShowViewer(true)} />
+            <VideoContent
+              dump={dump}
+              onView={() => setShowViewer(true)}
+              isEditingTitle={isEditingTitle}
+              editValue={editValue}
+              onEditChange={setEditValue}
+              onSave={saveTitle}
+              onCancel={cancelEditing}
+            />
           )}
         </div>
 
@@ -80,6 +136,9 @@ export function DumpCard({ dump }: DumpCardProps) {
         {/* Context menu */}
         {showMenu && (
           <div className="absolute right-2 bottom-10 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-10 min-w-[140px]">
+            <MenuButton onClick={startEditingTitle}>
+              Edit title
+            </MenuButton>
             <MenuButton
               onClick={() => {
                 togglePin.mutate({ id: dump.id, isPinned: dump.is_pinned });
@@ -116,16 +175,50 @@ export function DumpCard({ dump }: DumpCardProps) {
   );
 }
 
-function TextContent({ dump }: { dump: Dump }) {
+function TextContent({
+  dump,
+  isEditingTitle,
+  editValue,
+  onEditChange,
+  onSave,
+  onCancel,
+}: {
+  dump: Dump;
+  isEditingTitle: boolean;
+  editValue: string;
+  onEditChange: (value: string) => void;
+  onSave: () => void;
+  onCancel: () => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
   const body = dump.body || dump.content;
   const title = dump.title || dump.content;
   const showTitle = title && title !== body;
 
+  useEffect(() => {
+    if (isEditingTitle && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isEditingTitle]);
+
   return (
     <div>
-      {showTitle && (
+      {isEditingTitle ? (
+        <input
+          ref={inputRef}
+          type="text"
+          value={editValue}
+          onChange={(e) => onEditChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') onSave();
+            if (e.key === 'Escape') onCancel();
+          }}
+          onBlur={onSave}
+          className="w-full text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 bg-transparent border-b border-indigo-400 outline-none"
+        />
+      ) : showTitle ? (
         <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{title}</p>
-      )}
+      ) : null}
       <p className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words leading-relaxed">
         {body}
       </p>
@@ -133,13 +226,50 @@ function TextContent({ dump }: { dump: Dump }) {
   );
 }
 
-function ImageContent({ dump, onView }: { dump: Dump; onView: () => void }) {
+function ImageContent({
+  dump,
+  onView,
+  isEditingTitle,
+  editValue,
+  onEditChange,
+  onSave,
+  onCancel,
+}: {
+  dump: Dump;
+  onView: () => void;
+  isEditingTitle: boolean;
+  editValue: string;
+  onEditChange: (value: string) => void;
+  onSave: () => void;
+  onCancel: () => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
   const caption = dump.body || dump.title || dump.content;
+
+  useEffect(() => {
+    if (isEditingTitle && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isEditingTitle]);
+
   return (
     <div>
-      {caption && caption !== '[Image]' && (
+      {isEditingTitle ? (
+        <input
+          ref={inputRef}
+          type="text"
+          value={editValue}
+          onChange={(e) => onEditChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') onSave();
+            if (e.key === 'Escape') onCancel();
+          }}
+          onBlur={onSave}
+          className="w-full text-sm text-gray-800 dark:text-gray-200 mb-2 bg-transparent border-b border-indigo-400 outline-none"
+        />
+      ) : caption && caption !== '[Image]' ? (
         <p className="text-gray-800 dark:text-gray-200 text-sm mb-2">{caption}</p>
-      )}
+      ) : null}
       <img
         src={dump.media_url!}
         alt={caption || 'Image'}
@@ -151,13 +281,50 @@ function ImageContent({ dump, onView }: { dump: Dump; onView: () => void }) {
   );
 }
 
-function VideoContent({ dump, onView }: { dump: Dump; onView: () => void }) {
+function VideoContent({
+  dump,
+  onView,
+  isEditingTitle,
+  editValue,
+  onEditChange,
+  onSave,
+  onCancel,
+}: {
+  dump: Dump;
+  onView: () => void;
+  isEditingTitle: boolean;
+  editValue: string;
+  onEditChange: (value: string) => void;
+  onSave: () => void;
+  onCancel: () => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
   const caption = dump.body || dump.title || dump.content;
+
+  useEffect(() => {
+    if (isEditingTitle && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isEditingTitle]);
+
   return (
     <div>
-      {caption && caption !== '[Video]' && (
+      {isEditingTitle ? (
+        <input
+          ref={inputRef}
+          type="text"
+          value={editValue}
+          onChange={(e) => onEditChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') onSave();
+            if (e.key === 'Escape') onCancel();
+          }}
+          onBlur={onSave}
+          className="w-full text-sm text-gray-800 dark:text-gray-200 mb-2 bg-transparent border-b border-indigo-400 outline-none"
+        />
+      ) : caption && caption !== '[Video]' ? (
         <p className="text-gray-800 dark:text-gray-200 text-sm mb-2">{caption}</p>
-      )}
+      ) : null}
       <div
         className="relative w-full rounded-lg overflow-hidden bg-gray-900 cursor-pointer max-h-80"
         onClick={onView}

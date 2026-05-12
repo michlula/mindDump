@@ -67,6 +67,23 @@ export function useTogglePin() {
   });
 }
 
+export function useUpdateDumpTitle() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, title }: { id: string; title: string }) => {
+      const { error } = await supabase
+        .from('dumps')
+        .update({ title, content: title })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dumps'] });
+    },
+  });
+}
+
 export function useUpdateDumpCategory() {
   const queryClient = useQueryClient();
 
