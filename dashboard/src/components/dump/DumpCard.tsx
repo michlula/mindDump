@@ -72,6 +72,7 @@ export function DumpCard({ dump }: DumpCardProps) {
               onEditChange={setEditValue}
               onSave={saveTitle}
               onCancel={cancelEditing}
+              onStartEdit={startEditingTitle}
             />
           )}
           {dump.type === 'link' && (
@@ -82,6 +83,7 @@ export function DumpCard({ dump }: DumpCardProps) {
               onEditChange={setEditValue}
               onSave={saveTitle}
               onCancel={cancelEditing}
+              onStartEdit={startEditingTitle}
             />
           )}
           {dump.type === 'image' && (
@@ -93,6 +95,7 @@ export function DumpCard({ dump }: DumpCardProps) {
               onEditChange={setEditValue}
               onSave={saveTitle}
               onCancel={cancelEditing}
+              onStartEdit={startEditingTitle}
             />
           )}
           {dump.type === 'video' && (
@@ -104,6 +107,7 @@ export function DumpCard({ dump }: DumpCardProps) {
               onEditChange={setEditValue}
               onSave={saveTitle}
               onCancel={cancelEditing}
+              onStartEdit={startEditingTitle}
             />
           )}
         </div>
@@ -182,6 +186,7 @@ function TextContent({
   onEditChange,
   onSave,
   onCancel,
+  onStartEdit,
 }: {
   dump: Dump;
   isEditingTitle: boolean;
@@ -189,6 +194,7 @@ function TextContent({
   onEditChange: (value: string) => void;
   onSave: () => void;
   onCancel: () => void;
+  onStartEdit: () => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const body = dump.body || dump.content;
@@ -217,7 +223,12 @@ function TextContent({
           className="w-full text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 bg-transparent border-b border-indigo-400 outline-none"
         />
       ) : showTitle ? (
-        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{title}</p>
+        <p
+          className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 cursor-pointer hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors"
+          onClick={onStartEdit}
+        >
+          {title}
+        </p>
       ) : null}
       <p className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words leading-relaxed">
         {body}
@@ -234,6 +245,7 @@ function ImageContent({
   onEditChange,
   onSave,
   onCancel,
+  onStartEdit,
 }: {
   dump: Dump;
   onView: () => void;
@@ -242,6 +254,7 @@ function ImageContent({
   onEditChange: (value: string) => void;
   onSave: () => void;
   onCancel: () => void;
+  onStartEdit: () => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const caption = dump.body || dump.title || dump.content;
@@ -268,7 +281,12 @@ function ImageContent({
           className="w-full text-sm text-gray-800 dark:text-gray-200 mb-2 bg-transparent border-b border-indigo-400 outline-none"
         />
       ) : caption && caption !== '[Image]' ? (
-        <p className="text-gray-800 dark:text-gray-200 text-sm mb-2">{caption}</p>
+        <p
+          className="text-gray-800 dark:text-gray-200 text-sm mb-2 cursor-pointer hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors"
+          onClick={onStartEdit}
+        >
+          {caption}
+        </p>
       ) : null}
       <img
         src={dump.media_url!}
@@ -289,6 +307,7 @@ function VideoContent({
   onEditChange,
   onSave,
   onCancel,
+  onStartEdit,
 }: {
   dump: Dump;
   onView: () => void;
@@ -297,6 +316,7 @@ function VideoContent({
   onEditChange: (value: string) => void;
   onSave: () => void;
   onCancel: () => void;
+  onStartEdit: () => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const caption = dump.body || dump.title || dump.content;
@@ -323,7 +343,12 @@ function VideoContent({
           className="w-full text-sm text-gray-800 dark:text-gray-200 mb-2 bg-transparent border-b border-indigo-400 outline-none"
         />
       ) : caption && caption !== '[Video]' ? (
-        <p className="text-gray-800 dark:text-gray-200 text-sm mb-2">{caption}</p>
+        <p
+          className="text-gray-800 dark:text-gray-200 text-sm mb-2 cursor-pointer hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors"
+          onClick={onStartEdit}
+        >
+          {caption}
+        </p>
       ) : null}
       <div
         className="relative w-full rounded-lg overflow-hidden bg-gray-900 cursor-pointer max-h-80"

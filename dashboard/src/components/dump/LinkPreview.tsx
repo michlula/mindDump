@@ -8,6 +8,7 @@ interface LinkPreviewProps {
   onEditChange: (value: string) => void;
   onSave: () => void;
   onCancel: () => void;
+  onStartEdit: () => void;
 }
 
 export function LinkPreview({
@@ -17,6 +18,7 @@ export function LinkPreview({
   onEditChange,
   onSave,
   onCancel,
+  onStartEdit,
 }: LinkPreviewProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const meta = dump.metadata;
@@ -52,7 +54,12 @@ export function LinkPreview({
           className="w-full text-sm text-gray-800 dark:text-gray-200 mb-2 bg-transparent border-b border-indigo-400 outline-none"
         />
       ) : aiTitle !== url ? (
-        <p className="text-gray-800 dark:text-gray-200 text-sm mb-2">{aiTitle}</p>
+        <p
+          className="text-gray-800 dark:text-gray-200 text-sm mb-2 cursor-pointer hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors"
+          onClick={onStartEdit}
+        >
+          {aiTitle}
+        </p>
       ) : null}
 
       <a
