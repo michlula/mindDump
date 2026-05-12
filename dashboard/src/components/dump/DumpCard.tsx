@@ -42,7 +42,7 @@ export function DumpCard({ dump }: DumpCardProps) {
 
         {/* Content */}
         <div className="p-4">
-          {dump.type === 'text' && <TextContent content={dump.content} />}
+          {dump.type === 'text' && <TextContent dump={dump} />}
           {dump.type === 'link' && <LinkPreview dump={dump} />}
           {dump.type === 'image' && (
             <ImageContent dump={dump} onView={() => setShowViewer(true)} />
@@ -116,23 +116,33 @@ export function DumpCard({ dump }: DumpCardProps) {
   );
 }
 
-function TextContent({ content }: { content: string }) {
+function TextContent({ dump }: { dump: Dump }) {
+  const body = dump.body || dump.content;
+  const title = dump.title || dump.content;
+  const showTitle = title && title !== body;
+
   return (
-    <p className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words leading-relaxed">
-      {content}
-    </p>
+    <div>
+      {showTitle && (
+        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{title}</p>
+      )}
+      <p className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words leading-relaxed">
+        {body}
+      </p>
+    </div>
   );
 }
 
 function ImageContent({ dump, onView }: { dump: Dump; onView: () => void }) {
+  const caption = dump.body || dump.title || dump.content;
   return (
     <div>
-      {dump.content && dump.content !== '[Image]' && (
-        <p className="text-gray-800 dark:text-gray-200 text-sm mb-2">{dump.content}</p>
+      {caption && caption !== '[Image]' && (
+        <p className="text-gray-800 dark:text-gray-200 text-sm mb-2">{caption}</p>
       )}
       <img
         src={dump.media_url!}
-        alt={dump.content || 'Image'}
+        alt={caption || 'Image'}
         className="w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity max-h-80 object-cover"
         onClick={onView}
         loading="lazy"
@@ -142,10 +152,11 @@ function ImageContent({ dump, onView }: { dump: Dump; onView: () => void }) {
 }
 
 function VideoContent({ dump, onView }: { dump: Dump; onView: () => void }) {
+  const caption = dump.body || dump.title || dump.content;
   return (
     <div>
-      {dump.content && dump.content !== '[Video]' && (
-        <p className="text-gray-800 dark:text-gray-200 text-sm mb-2">{dump.content}</p>
+      {caption && caption !== '[Video]' && (
+        <p className="text-gray-800 dark:text-gray-200 text-sm mb-2">{caption}</p>
       )}
       <div
         className="relative w-full rounded-lg overflow-hidden bg-gray-900 cursor-pointer max-h-80"

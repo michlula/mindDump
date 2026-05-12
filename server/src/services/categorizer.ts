@@ -140,7 +140,8 @@ Your job:
 2. Generate a short TITLE (2-6 words, in Hebrew) for each group
 3. CATEGORIZE each group into one of: ${categoryList}
 4. Assign a CONFIDENCE score (0-1) for the category
-5. DETECT if the content mentions a specific date or event date → set "event_date" to that date in YYYY-MM-DD format, or null if no date is mentioned
+5. DETECT if the content mentions a specific date or event date → set "event_date" to YYYY-MM-DD format, or null if no date mentioned
+6. DETECT if the content mentions a specific time → set "event_time" to HH:MM (24h format), or null if no time mentioned
 
 Messages:${messageDescriptions}
 
@@ -152,7 +153,8 @@ Respond with ONLY a JSON object (no markdown, no code blocks):
       "category": "CategoryName",
       "confidence": 0.85,
       "type": "image",
-      "event_date": "2025-03-15",
+      "event_date": "2025-05-03",
+      "event_time": "17:20",
       "message_indices": [0, 1]
     }
   ]
@@ -166,7 +168,8 @@ Rules:
 - "title" MUST be in Hebrew, descriptive and concise (2-6 words)
 - When a group has multiple messages (e.g., image+text, link+text, video+text), check if the text message relates to the other content. If it does, prefer basing the title on the user's text. For example: image of a restaurant + text "דייט עם אלעד" → title "דייט עם אלעד". But if the text is unrelated, use your best judgment combining all content
 - Default category to "General" if unsure
-- "event_date": Extract the ACTUAL date the content refers to, NOT today's date. CRITICAL: The user is Israeli — dates use DD/MM format (day first, then month). "3/5" means the 3rd of May → "2026-05-03". "15/1" means January 15th → "2026-01-15". NEVER interpret as American MM/DD. Also parse Hebrew dates: "15 ינואר" = January 15. Resolve relative dates ("tomorrow", "next Thursday", "ביום שלישי") relative to today (${today}). If no year specified, use ${currentYear}, or next year if that month already passed. Set to null ONLY if no date is mentioned at all. Must be YYYY-MM-DD or null`;
+- "event_date": Extract the ACTUAL date the content refers to, NOT today's date. CRITICAL: The user is Israeli — dates use DD/MM format (day first, then month). "3/5" means the 3rd of May → "2026-05-03". "15/1" means January 15th → "2026-01-15". NEVER interpret as American MM/DD. Also parse Hebrew dates: "15 ינואר" = January 15. Resolve relative dates ("tomorrow", "next Thursday", "ביום שלישי") relative to today (${today}). If no year specified, use ${currentYear}, or next year if that month already passed. Set to null ONLY if no date is mentioned at all. Must be YYYY-MM-DD or null
+- "event_time": Extract time if mentioned. "17:20" → "17:20", "5pm" → "17:00", "בשעה 9 בבוקר" → "09:00". Use 24h HH:MM format. Set to null if no time mentioned`;
 
     parts.push({ text: prompt });
 

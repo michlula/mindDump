@@ -6,7 +6,8 @@ interface LinkPreviewProps {
 
 export function LinkPreview({ dump }: LinkPreviewProps) {
   const meta = dump.metadata;
-  const url = meta?.url || dump.content;
+  const url = meta?.url || dump.body || dump.content;
+  const aiTitle = dump.title || dump.content;
   const displayUrl = (() => {
     try {
       return new URL(url).hostname.replace('www.', '');
@@ -22,9 +23,9 @@ export function LinkPreview({ dump }: LinkPreviewProps) {
       rel="noopener noreferrer"
       className="block hover:opacity-90 transition-opacity"
     >
-      {/* Show original text if different from URL */}
-      {dump.content !== url && (
-        <p className="text-gray-800 dark:text-gray-200 text-sm mb-2">{dump.content}</p>
+      {/* Show AI title if different from URL */}
+      {aiTitle !== url && (
+        <p className="text-gray-800 dark:text-gray-200 text-sm mb-2">{aiTitle}</p>
       )}
 
       <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">

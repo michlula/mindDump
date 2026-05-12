@@ -94,17 +94,18 @@ async function processChatBatch(bot: Bot, chatId: number): Promise<void> {
         .filter((m) => m.content)
         .map((m) => m.content!);
 
-      const content = group.title || textParts.join('\n') || '[No content]';
-      const description = textParts.join('\n') || undefined;
+      const aiTitle = group.title || textParts.join('\n') || '[No content]';
+      const userBody = textParts.join('\n') || undefined;
 
       const dump: DumpInsert = {
-        content,
+        content: aiTitle,
+        title: aiTitle,
+        body: userBody || aiTitle,
         type: group.type,
         metadata: {
-          title: group.title,
-          ...(description && description !== content ? { description } : {}),
           ...(groupMessages.length > 1 ? { grouped_messages: groupMessages.length } : {}),
           ...(group.event_date ? { event_date: group.event_date } : {}),
+          ...(group.event_time ? { event_time: group.event_time } : {}),
         },
         telegram_message_id: groupMessages[0].telegram_message_id ?? undefined,
       };
@@ -119,10 +120,11 @@ async function processChatBatch(bot: Bot, chatId: number): Promise<void> {
       for (const m of groupMessages) {
         if (m.metadata && Object.keys(m.metadata).length > 0) {
           dump.metadata = { ...dump.metadata, ...m.metadata };
-          // Re-apply AI-generated fields since message metadata might overwrite
-          (dump.metadata as Record<string, unknown>).title = group.title;
           if (group.event_date) {
             (dump.metadata as Record<string, unknown>).event_date = group.event_date;
+          }
+          if (group.event_time) {
+            (dump.metadata as Record<string, unknown>).event_time = group.event_time;
           }
         }
       }

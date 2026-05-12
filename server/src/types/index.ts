@@ -10,6 +10,8 @@ export interface Category {
 export interface Dump {
   id: string;
   content: string;
+  title: string | null;
+  body: string | null;
   type: 'text' | 'link' | 'image' | 'video';
   category_id: string | null;
   media_url: string | null;
@@ -22,6 +24,8 @@ export interface Dump {
 
 export interface DumpInsert {
   content: string;
+  title?: string;
+  body?: string;
   type: 'text' | 'link' | 'image' | 'video';
   category_id?: string;
   media_url?: string;
@@ -68,6 +72,7 @@ export interface DumpGroup {
   type: 'text' | 'link' | 'image' | 'video';
   message_indices: number[];
   event_date?: string | null;
+  event_time?: string | null;
 }
 
 export interface BatchResult {

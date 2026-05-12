@@ -10,6 +10,8 @@ export interface Category {
 export interface Dump {
   id: string;
   content: string;
+  title: string | null;
+  body: string | null;
   type: 'text' | 'link' | 'image' | 'video';
   category_id: string | null;
   media_url: string | null;

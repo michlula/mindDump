@@ -140,3 +140,23 @@ RETURNS SETOF pending_messages AS $$
   )
   SELECT * FROM claimed ORDER BY created_at;
 $$ LANGUAGE sql SECURITY DEFINER;
+
+-- ============================================================
+-- 8. Add dedicated title/body columns to dumps
+-- ============================================================
+ALTER TABLE dumps ADD COLUMN title TEXT;
+ALTER TABLE dumps ADD COLUMN body TEXT;
+
+-- Recreate search_vector to index title, body, and content
+DROP INDEX idx_dumps_search;
+ALTER TABLE dumps DROP COLUMN search_vector;
+ALTER TABLE dumps ADD COLUMN search_vector TSVECTOR
+  GENERATED ALWAYS AS (
+    to_tsvector('english', coalesce(title, '') || ' ' || coalesce(body, '') || ' ' || coalesce(content, ''))
+  ) STORED;
+CREATE INDEX idx_dumps_search ON dumps USING GIN(search_vector);
+
+-- Backfill existing rows
+UPDATE dumps SET
+  title = content,
+  body = COALESCE(metadata->>'description', content);
