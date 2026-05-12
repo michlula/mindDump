@@ -40,6 +40,7 @@ User sends messages → Webhook saves to pending_messages (<500ms)
 - When a group has multiple messages (image+text, link+text, etc.), user's text is preferred for title if it relates to the other content
 - AI retry chain: Gemini 2.5 Flash → Gemini 2.0 Flash → OpenRouter (Gemma 3 12B)
 - **Date detection**: AI extracts `event_date` (YYYY-MM-DD) from content mentioning dates ("tomorrow", "next Thursday", "Jan 15"). Today's date + day of week provided in prompt for resolving relative dates. Validated with regex; null if no date detected.
+- **Time detection**: AI extracts `event_time` (HH:MM 24h) from content mentioning times ("5pm", "17:20", "בשעה 9 בבוקר"). Stored in dump metadata; null if no time mentioned.
 
 ## Deployment Strategy: Vercel (Free Tier)
 Both the bot and dashboard deploy as a single Vercel project — $0/month.
@@ -49,6 +50,7 @@ Both the bot and dashboard deploy as a single Vercel project — $0/month.
 
 ## Database
 - 4 tables: `categories`, `dumps`, `pending_categorizations`, `pending_messages`
+- `dumps` has dedicated `title` (AI-generated) and `body` (user's original text) columns — `content` kept for backwards compat (set to AI title)
 - `pending_messages` stores raw message data (file_id, content, metadata) — batch processor claims and deletes atomically
 - 2 RPC functions: `get_stale_batch_chats()` and `claim_pending_batch(chat_id)` for atomic batch operations
 - RLS enabled: public read/update/delete on dumps (anon key), service_role full access on all tables

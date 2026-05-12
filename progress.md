@@ -51,9 +51,15 @@
 - [x] Dashboard: Calendar toggle button in Header
 - [x] Dashboard: Wire calendar view into AppShell (hide filters in calendar mode)
 
+## Phase 10: Title/Body Columns + Event Time — DONE
+- [x] Add `title` and `body` columns to dumps table (migration + backfill)
+- [x] Store AI title and user text as first-class fields in batchProcessor
+- [x] Dashboard: Display body as main content, title as label on DumpCard
+- [x] Dashboard: LinkPreview uses body for URL, title for AI label
+- [x] AI: Extract event_time (HH:MM 24h) from content, store in metadata
+- [x] Rebuild search_vector to index title + body + content
+
 ## Future
 - [ ] Security: Authentication for dashboard, private RLS policies
-- [ ] Dashboard: Display AI-generated titles on DumpCard
-- [ ] Dashboard: Add `title` column to dumps table for display
 - [ ] Dashboard: Redesign UI for a more visually appealing look and feel
 - [ ] Calendar: Sync events to phone calendar (stretch goal)
