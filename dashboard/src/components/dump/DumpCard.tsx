@@ -140,9 +140,6 @@ export function DumpCard({ dump }: DumpCardProps) {
         {/* Context menu */}
         {showMenu && (
           <div className="absolute right-2 bottom-10 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-10 min-w-[140px]">
-            <MenuButton onClick={startEditingTitle}>
-              Edit title
-            </MenuButton>
             <MenuButton
               onClick={() => {
                 togglePin.mutate({ id: dump.id, isPinned: dump.is_pinned });
